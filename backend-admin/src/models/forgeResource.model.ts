@@ -10,11 +10,12 @@ interface Review {
 export interface IForgeResource extends Document {
   title: string;
   type: 'article' | 'video' | 'book' | 'course' | 'tool' | 'repository' | 'documentation';
-  url: string;
+  url?: string;
   description: string;
   content?: string;
   tags: string[];
   difficulty: 'beginner' | 'intermediate' | 'advanced';
+  isExternal: boolean;
   createdBy: mongoose.Types.ObjectId;
   reviews: Review[];
   metrics: {
@@ -40,8 +41,12 @@ const ForgeResourceSchema: Schema = new Schema(
     },
     url: {
       type: String,
-      required: [true, 'Please provide a URL'],
       trim: true,
+      required: false,
+    },
+    isExternal: {
+      type: Boolean,
+      default: function (this: any) { return !!this.url; },
     },
     description: {
       type: String,
@@ -108,5 +113,12 @@ const ForgeResourceSchema: Schema = new Schema(
   },
   { timestamps: true }
 );
+
+// Pre-save hook to set isExternal dynamically
+ForgeResourceSchema.pre('save', function (next) {
+  // @ts-ignore
+  this.isExternal = !!this.url;
+  next();
+});
 
 export default mongoose.model<IForgeResource>('ForgeResource', ForgeResourceSchema); 

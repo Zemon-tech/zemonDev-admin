@@ -34,14 +34,16 @@ export const getResourceById = async (req: Request, res: Response, next: NextFun
 // @access  Private/Admin
 export const createResource = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const { title, type, url, description, tags, difficulty } = req.body;
+        const { title, type, url, description, content, tags, difficulty, isExternal } = req.body;
         const resource = new ForgeResource({
             title,
             type,
             url,
             description,
+            content,
             tags,
             difficulty,
+            isExternal: typeof isExternal === 'boolean' ? isExternal : !!url,
             createdBy: req.user?._id, // Comes from protect middleware
         });
         const createdResource = await resource.save();
@@ -56,16 +58,17 @@ export const createResource = async (req: Request, res: Response, next: NextFunc
 // @access  Private/Admin
 export const updateResource = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const { title, type, url, description, content, tags, difficulty } = req.body;
+        const { title, type, url, description, content, tags, difficulty, isExternal } = req.body;
         const resource = await ForgeResource.findById(req.params.id);
         if (resource) {
             resource.title = title || resource.title;
             resource.type = type || resource.type;
-            resource.url = url || resource.url;
+            resource.url = url || '';
             resource.description = description || resource.description;
-            resource.content = content || resource.content;
+            resource.content = content || '';
             resource.tags = tags || resource.tags;
             resource.difficulty = difficulty || resource.difficulty;
+            resource.isExternal = typeof isExternal === 'boolean' ? isExternal : !!url;
             const updatedResource = await resource.save();
             res.json(updatedResource);
         } else {

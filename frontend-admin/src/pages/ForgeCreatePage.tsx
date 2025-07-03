@@ -13,6 +13,8 @@ const ForgeCreatePage: React.FC = () => {
         description: '',
         tags: [],
         difficulty: 'intermediate',
+        isExternal: true,
+        content: '',
     });
 
     const handleSubmit = async (e: React.FormEvent) => {

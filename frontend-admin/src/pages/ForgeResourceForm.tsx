@@ -3,10 +3,12 @@ import React from 'react';
 export interface IForgeResourceData {
     title: string;
     type: 'article' | 'video' | 'book' | 'course' | 'tool' | 'repository' | 'documentation';
-    url: string;
+    url?: string;
     description: string;
     tags: string[];
     difficulty: 'beginner' | 'intermediate' | 'advanced';
+    isExternal: boolean;
+    content?: string;
 }
 
 interface ForgeResourceFormProps {
@@ -22,6 +24,16 @@ const ForgeResourceForm: React.FC<ForgeResourceFormProps> = ({ formData, setForm
         setFormData(prev => ({ ...prev, [name]: name === 'tags' ? value.split(',').map(tag => tag.trim()) : value }));
     };
 
+    // Toggle between Link and Document
+    const handleTab = (isExternal: boolean) => {
+        setFormData(prev => ({
+            ...prev,
+            isExternal,
+            url: isExternal ? prev.url || '' : '',
+            content: !isExternal ? prev.content || '' : '',
+        }));
+    };
+
     return (
         <form onSubmit={onSubmit} className="card bg-base-100 shadow-xl p-8 space-y-4">
             <div className="form-control">
@@ -29,11 +41,38 @@ const ForgeResourceForm: React.FC<ForgeResourceFormProps> = ({ formData, setForm
                 <input type="text" name="title" value={formData.title} onChange={handleChange} className="input input-bordered" required />
             </div>
 
+            {/* DaisyUI Tabs for Link/Document */}
             <div className="form-control">
-                <label className="label"><span className="label-text">URL</span></label>
-                <input type="url" name="url" value={formData.url} onChange={handleChange} className="input input-bordered" required />
+                <div className="tabs tabs-boxed w-full mb-2">
+                    <a
+                        className={`tab flex-1 ${formData.isExternal ? 'tab-active' : ''}`}
+                        onClick={() => handleTab(true)}
+                        role="button"
+                    >
+                        Link
+                    </a>
+                    <a
+                        className={`tab flex-1 ${!formData.isExternal ? 'tab-active' : ''}`}
+                        onClick={() => handleTab(false)}
+                        role="button"
+                    >
+                        Document
+                    </a>
+                </div>
             </div>
-            
+
+            {formData.isExternal ? (
+                <div className="form-control">
+                    <label className="label"><span className="label-text">URL</span></label>
+                    <input type="url" name="url" value={formData.url || ''} onChange={handleChange} className="input input-bordered" required={formData.isExternal} />
+                </div>
+            ) : (
+                <div className="form-control">
+                    <label className="label"><span className="label-text">Content (Markdown)</span></label>
+                    <textarea name="content" value={formData.content || ''} onChange={handleChange} className="textarea textarea-bordered min-h-[120px]" placeholder="Enter markdown content..." required={!formData.isExternal} />
+                </div>
+            )}
+
             <div className="form-control">
                 <label className="label"><span className="label-text">Description</span></label>
                 <textarea name="description" value={formData.description} onChange={handleChange} className="textarea textarea-bordered" required />
