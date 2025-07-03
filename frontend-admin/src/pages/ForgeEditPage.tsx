@@ -17,6 +17,8 @@ const ForgeEditPage: React.FC = () => {
         description: '',
         tags: [],
         difficulty: 'intermediate',
+        isExternal: true,
+        content: '',
     });
 
     useEffect(() => {
@@ -28,6 +30,8 @@ const ForgeEditPage: React.FC = () => {
                 description: resource.description,
                 tags: resource.tags,
                 difficulty: resource.difficulty,
+                isExternal: typeof resource.isExternal === 'boolean' ? resource.isExternal : !!resource.url,
+                content: resource.content || '',
             });
         }
     }, [resource]);

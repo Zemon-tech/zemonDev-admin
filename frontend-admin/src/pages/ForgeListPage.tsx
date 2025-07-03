@@ -9,6 +9,11 @@ interface IForgeResource {
     title: string;
     type: string;
     difficulty: string;
+    metrics?: {
+        views: number;
+        bookmarks: number;
+        rating: number;
+    };
 }
 
 const ForgeListPage: React.FC = () => {
@@ -48,6 +53,9 @@ const ForgeListPage: React.FC = () => {
                             <th>Title</th>
                             <th>Type</th>
                             <th>Difficulty</th>
+                            <th>Views</th>
+                            <th>Bookmarks</th>
+                            <th>Rating</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -57,6 +65,9 @@ const ForgeListPage: React.FC = () => {
                                 <td>{resource.title}</td>
                                 <td>{resource.type}</td>
                                 <td><span className="badge badge-outline">{resource.difficulty}</span></td>
+                                <td>{resource.metrics?.views ?? 0}</td>
+                                <td>{resource.metrics?.bookmarks ?? 0}</td>
+                                <td>{resource.metrics?.rating?.toFixed(2) ?? '0.00'}</td>
                                 <td className="flex gap-2">
                                     <Link to={`/admin/forge/edit/${resource._id}`} className="btn btn-sm btn-ghost"><Edit size={16} /></Link>
                                     <button onClick={() => setResourceToDelete(resource)} className="btn btn-sm btn-ghost text-error"><Trash2 size={16} /></button>
