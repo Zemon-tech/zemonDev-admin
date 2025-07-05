@@ -7,6 +7,18 @@ import userRoutes from './api/user.routes';
 import forgeRoutes from './api/forge.routes';
 import crucibleRoutes from './api/crucible.routes';
 import User from './models/user.model';
+
+// Import all models to ensure they are registered with Mongoose
+import './models/crucibleProblem.model';
+import './models/crucibleSolution.model';
+import './models/solutionDraft.model';
+import './models/crucibleNote.model';
+import './models/aiChatHistory.model';
+import './models/workspaceState.model';
+import './models/crucibleDiagram.model';
+import './models/progressTracking.model';
+import './models/researchItem.model';
+
 import bcrypt from 'bcryptjs';
 import errorHandler from './middleware/error.middleware';
 
