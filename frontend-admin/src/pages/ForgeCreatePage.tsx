@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import api from '../services/api';
 import ForgeResourceForm from './ForgeResourceForm';
 import type { IForgeResourceData } from './ForgeResourceForm';
@@ -28,9 +29,26 @@ const ForgeCreatePage: React.FC = () => {
     };
 
     return (
-        <div>
-            <h1 className="text-2xl font-bold mb-4">Create New Resource</h1>
-            <ForgeResourceForm formData={formData} setFormData={setFormData} onSubmit={handleSubmit} />
+        <div className="w-full h-full overflow-auto pb-6">
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-primary">Create New Resource</h1>
+                    <p className="text-base-content/70 mt-0.5">Add a new resource to the Forge library</p>
+                </div>
+                <Link 
+                    to="/admin/forge" 
+                    className="btn btn-ghost btn-sm gap-1"
+                >
+                    <ArrowLeft size={16} />
+                    Back to List
+                </Link>
+            </div>
+            
+            <ForgeResourceForm 
+                formData={formData} 
+                setFormData={setFormData} 
+                onSubmit={handleSubmit} 
+            />
         </div>
     );
 };
