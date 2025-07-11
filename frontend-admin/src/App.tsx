@@ -11,6 +11,7 @@ import ForgeEditPage from './pages/ForgeEditPage';
 import CrucibleListPage from './pages/CrucibleListPage';
 import CrucibleCreatePage from './pages/CrucibleCreatePage';
 import CrucibleEditPage from './pages/CrucibleEditPage';
+import KnowledgeBasePage from './pages/KnowledgeBasePage';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
             <Route path="crucible" element={<CrucibleListPage />} />
             <Route path="crucible/create" element={<CrucibleCreatePage />} />
             <Route path="crucible/edit/:id" element={<CrucibleEditPage />} />
+            <Route path="knowledge-base" element={<KnowledgeBasePage />} />
             <Route index element={<Navigate to="dashboard" />} />
           </Route>
         </Route>

@@ -6,6 +6,7 @@ import authRoutes from './api/auth.routes';
 import userRoutes from './api/user.routes';
 import forgeRoutes from './api/forge.routes';
 import crucibleRoutes from './api/crucible.routes';
+import knowledgeBaseRoutes from './api/knowledgeBase.routes';
 import User from './models/user.model';
 
 // Import all models to ensure they are registered with Mongoose
@@ -18,6 +19,7 @@ import './models/workspaceState.model';
 import './models/crucibleDiagram.model';
 import './models/progressTracking.model';
 import './models/researchItem.model';
+import './models/knowledgeBaseDocument.model';
 
 import bcrypt from 'bcryptjs';
 import errorHandler from './middleware/error.middleware';
@@ -69,6 +71,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/forge', forgeRoutes);
 app.use('/api/crucible', crucibleRoutes);
+app.use('/api/admin/knowledge-base/documents', knowledgeBaseRoutes);
 
 const PORT = process.env.PORT || 5001;
 
