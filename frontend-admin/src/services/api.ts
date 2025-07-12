@@ -17,4 +17,17 @@ api.interceptors.request.use(config => {
   return config;
 });
 
-export default api; 
+// Response interceptor to handle token expiration
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token is expired or invalid, clear it and redirect to login
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api;
