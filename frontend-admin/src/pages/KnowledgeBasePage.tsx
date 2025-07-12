@@ -3,7 +3,6 @@ import { getKnowledgeBaseDocuments, deleteKnowledgeBaseDocument } from '../servi
 import type { KnowledgeBaseDocument } from '../services/knowledgeBaseApi';
 import { Plus, Edit, Trash2, Search, FileText, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import DocumentModal from '../components/knowledgeBase/DocumentModal';
 
 const KnowledgeBasePage: React.FC = () => {
   const [documents, setDocuments] = useState<KnowledgeBaseDocument[]>([]);
@@ -11,9 +10,6 @@ const KnowledgeBasePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalDocuments, setTotalDocuments] = useState(0);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentDocument, setCurrentDocument] = useState<KnowledgeBaseDocument | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
@@ -23,7 +19,6 @@ const KnowledgeBasePage: React.FC = () => {
       const response = await getKnowledgeBaseDocuments(page);
       setDocuments(response.documents);
       setTotalPages(response.pages);
-      setTotalDocuments(response.total);
       setError(null);
     } catch (err) {
       setError('Failed to fetch documents. Please try again.');
@@ -50,20 +45,11 @@ const KnowledgeBasePage: React.FC = () => {
   };
 
   const handleEdit = (document: KnowledgeBaseDocument) => {
-    setCurrentDocument(document);
-    setIsModalOpen(true);
+    navigate(`/admin/knowledge-base/edit/${document._id}`);
   };
 
   const handleAddNew = () => {
-    setCurrentDocument(null);
-    setIsModalOpen(true);
-  };
-
-  const handleModalClose = (refreshNeeded: boolean = false) => {
-    setIsModalOpen(false);
-    if (refreshNeeded) {
-      fetchDocuments();
-    }
+    navigate('/admin/knowledge-base/new');
   };
 
   const filteredDocuments = searchTerm
@@ -216,13 +202,6 @@ const KnowledgeBasePage: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Document Modal */}
-      <DocumentModal
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        document={currentDocument}
-      />
     </div>
   );
 };

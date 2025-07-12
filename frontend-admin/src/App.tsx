@@ -12,6 +12,8 @@ import CrucibleListPage from './pages/CrucibleListPage';
 import CrucibleCreatePage from './pages/CrucibleCreatePage';
 import CrucibleEditPage from './pages/CrucibleEditPage';
 import KnowledgeBasePage from './pages/KnowledgeBasePage';
+import KnowledgeBaseNewPage from './pages/KnowledgeBaseNewPage';
+import KnowledgeBaseEditPage from './pages/KnowledgeBaseEditPage';
 
 function App() {
   return (
@@ -30,6 +32,8 @@ function App() {
             <Route path="crucible/create" element={<CrucibleCreatePage />} />
             <Route path="crucible/edit/:id" element={<CrucibleEditPage />} />
             <Route path="knowledge-base" element={<KnowledgeBasePage />} />
+            <Route path="knowledge-base/new" element={<KnowledgeBaseNewPage />} />
+            <Route path="knowledge-base/edit/:id" element={<KnowledgeBaseEditPage />} />
             <Route index element={<Navigate to="dashboard" />} />
           </Route>
         </Route>
