@@ -195,29 +195,29 @@ const ForgeResourceForm: React.FC<ForgeResourceFormProps> = ({ formData, setForm
     };
 
     return (
-        <form onSubmit={onSubmit} className="w-full max-w-6xl bg-base-100 rounded-lg border border-base-300 shadow overflow-hidden">
+        <form onSubmit={onSubmit} className="w-full max-w-7xl bg-base-100 rounded-lg border border-base-300 shadow overflow-hidden">
             {/* Form Header - Simplified */}
-            <div className="bg-base-200 py-3 px-5 border-b border-base-300 flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-full bg-primary/10 text-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="bg-base-200 py-4 px-6 border-b border-base-300 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-primary/10 text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M12 2v20"></path><path d="m17 5-5-3-5 3"></path>
                         </svg>
                     </div>
-                    <span className="font-medium">{isEdit ? 'Update Resource' : 'New Resource'}</span>
+                    <span className="font-medium text-lg">{isEdit ? 'Update Resource' : 'New Resource'}</span>
                 </div>
-                <div className="flex p-1 bg-base-300/50 rounded-xl shadow-inner overflow-hidden">
+                <div className="flex p-1.5 bg-base-300/50 rounded-xl shadow-inner overflow-hidden">
                     <button
                         type="button"
                         onClick={() => handleTab(true)}
-                        className={`relative px-4 py-1.5 text-xs font-medium transition-all duration-200 rounded-lg ${
+                        className={`relative px-5 py-2 text-sm font-medium transition-all duration-200 rounded-lg ${
                             formData.isExternal 
                             ? 'text-primary-content bg-primary shadow-md' 
                             : 'text-base-content hover:bg-base-300'
                         }`}
                     >
-                        <div className="flex items-center gap-1.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <div className="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
                                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                             </svg>
@@ -227,14 +227,14 @@ const ForgeResourceForm: React.FC<ForgeResourceFormProps> = ({ formData, setForm
                     <button
                         type="button"
                         onClick={() => handleTab(false)}
-                        className={`relative px-4 py-1.5 text-xs font-medium transition-all duration-200 rounded-lg ${
+                        className={`relative px-5 py-2 text-sm font-medium transition-all duration-200 rounded-lg ${
                             !formData.isExternal 
                             ? 'text-primary-content bg-primary shadow-md' 
                             : 'text-base-content hover:bg-base-300'
                         }`}
                     >
-                        <div className="flex items-center gap-1.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <div className="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
                                 <polyline points="14 2 14 8 20 8"></polyline>
                             </svg>
@@ -244,10 +244,10 @@ const ForgeResourceForm: React.FC<ForgeResourceFormProps> = ({ formData, setForm
                 </div>
             </div>
             
-            <div className="flex flex-row gap-6 p-4">
+            <div className="flex flex-row gap-8 p-6">
                 {/* Left: Form fields */}
-                <div className="flex flex-col gap-3 w-[320px] min-w-[300px]">
-                    {errorMsg && <div className="alert alert-error py-2 text-xs shadow-sm">{errorMsg}</div>}
+                <div className="flex flex-col gap-4 w-[360px] min-w-[340px]">
+                    {errorMsg && <div className="alert alert-error py-3 text-sm shadow-sm">{errorMsg}</div>}
                 
                     {/* Top row: Title and Type */}
                     <div className="flex gap-3">
@@ -424,9 +424,9 @@ const ForgeResourceForm: React.FC<ForgeResourceFormProps> = ({ formData, setForm
                 </div>
                 
                 {/* Right: Content (Markdown) */}
-                <div className="flex-1 flex flex-col">
+                <div className="flex-1 flex flex-col gap-4">
                     {!formData.isExternal ? (
-                        <div className="form-control h-full flex-1 relative">
+                        <div className="bg-base-200/50 rounded-lg p-6 flex flex-col gap-4">
                             <label className="label py-1 flex justify-between items-center">
                                 <span className="label-text text-xs font-medium flex items-center gap-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -455,29 +455,18 @@ Content goes here..."
                             </div>
                         </div>
                     ) : (
-                        <div className="flex flex-col h-full">
-                            <div className="py-1 mb-1">
-                                <span className="label-text text-xs font-medium flex items-center gap-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <div className="bg-base-200/50 rounded-lg p-6 flex flex-col items-center justify-center min-h-[300px]">
+                            {formData.url ? (
+                                renderUrlPreview()
+                            ) : (
+                                <div className="text-center text-base-content/70 p-8">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                                     </svg>
-                                    Resource Preview
-                                </span>
-                            </div>
-                            
-                            <div className="flex-1 flex items-center justify-center bg-base-200/50 rounded-lg border border-base-300 overflow-hidden">
-                                {formData.url ? (
-                                    renderUrlPreview()
-                                ) : (
-                                    <div className="text-center text-base-content/70 p-8">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                                        </svg>
-                                        <p className="mt-2 text-sm">Enter a URL above to see a preview</p>
-                                    </div>
-                                )}
-                            </div>
+                                    <p className="mt-2 text-sm">Enter a URL above to see a preview</p>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

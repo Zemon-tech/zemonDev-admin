@@ -151,15 +151,15 @@ const CrucibleCreatePage: React.FC = () => {
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
             {/* Page Header */}
-            <div className="mb-8">
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 text-primary rounded-xl">
-                            <Target size={24} />
+            <div className="mb-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-primary/10 text-primary rounded-lg">
+                            <Target size={20} />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-base-content">Create New Crucible Problem</h1>
-                            <p className="text-sm text-base-content/70 mt-1">Design a challenging problem for users to solve</p>
+                            <h1 className="text-xl font-medium">Create New Problem</h1>
+                            <p className="text-sm text-base-content/70">Add a new problem to the Crucible</p>
                         </div>
                     </div>
                     <button 
@@ -170,8 +170,8 @@ const CrucibleCreatePage: React.FC = () => {
                     </button>
                 </div>
                 
-                <div className="mt-6 flex items-center">
-                    <div className="w-full bg-base-200 h-2 rounded-full overflow-hidden">
+                <div className="mt-4 flex items-center">
+                    <div className="w-full bg-base-200 h-1.5 rounded-full overflow-hidden">
                         {tabs.map((tab, index) => {
                             const currentIndex = tabs.findIndex(t => t.id === activeTab);
                             return (
@@ -187,7 +187,7 @@ const CrucibleCreatePage: React.FC = () => {
             </div>
             
             {/* Main Card */}
-            <div className="card bg-base-100 shadow-xl border border-base-200 overflow-hidden">
+            <div className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
                 {/* Tab Navigation */}
                 <div className="bg-base-100 border-b border-base-200 sticky top-0 z-10">
                     <div className="flex overflow-x-auto scrollbar-hide">
@@ -195,7 +195,7 @@ const CrucibleCreatePage: React.FC = () => {
                             <button 
                                 key={tab.id}
                                 className={`
-                                    relative flex items-center gap-2 px-6 py-4 transition-all duration-200
+                                    relative flex items-center gap-1.5 px-4 py-2.5 transition-all duration-200 text-sm
                                     ${activeTab === tab.id 
                                         ? 'text-primary font-medium' 
                                         : 'text-base-content/70 hover:text-primary hover:bg-base-200/50'
@@ -203,7 +203,7 @@ const CrucibleCreatePage: React.FC = () => {
                                 `}
                                 onClick={() => setActiveTab(tab.id)}
                             >
-                                <div className={`rounded-full p-1.5 ${activeTab === tab.id ? 'bg-primary/10' : 'bg-base-200'}`}>
+                                <div className={`rounded-full p-1 ${activeTab === tab.id ? 'bg-primary/10' : 'bg-base-200'}`}>
                                     {tab.icon}
                                 </div>
                                 <span>{tab.label}</span>
@@ -214,8 +214,8 @@ const CrucibleCreatePage: React.FC = () => {
                                 )}
                                 
                                 {/* Step indicator */}
-                                <div className="absolute top-2 right-2">
-                                    <div className={`rounded-full w-4 h-4 flex items-center justify-center text-[10px] 
+                                <div className="ml-1">
+                                    <div className={`rounded-full w-3.5 h-3.5 flex items-center justify-center text-[10px] 
                                         ${activeTab === tab.id 
                                             ? 'bg-primary text-white' 
                                             : 'bg-base-200 text-base-content/70'}`}>
@@ -227,9 +227,9 @@ const CrucibleCreatePage: React.FC = () => {
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6">
+                <form onSubmit={handleSubmit} className="p-4">
                     {/* Basic Info Tab */}
-                    <div className={`space-y-6 ${activeTab !== 'basic' ? 'hidden' : ''}`}>
+                    <div className={`space-y-4 ${activeTab !== 'basic' ? 'hidden' : ''}`}>
                         {/* Title & Difficulty */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="form-control">
@@ -419,7 +419,7 @@ const CrucibleCreatePage: React.FC = () => {
                     </div>
 
                     {/* Requirements Tab */}
-                    <div className={`space-y-6 ${activeTab !== 'requirements' ? 'hidden' : ''}`}>
+                    <div className={`space-y-4 ${activeTab !== 'requirements' ? 'hidden' : ''}`}>
                         {/* Functional Requirements */}
                         <div className="form-control bg-base-100 rounded-lg border border-base-200 p-4 transition-all hover:border-primary/30">
                             <label className="label pb-1 flex items-center gap-2">
@@ -503,7 +503,7 @@ Example:
                     </div>
 
                     {/* Learning Tab */}
-                    <div className={`space-y-6 ${activeTab !== 'learning' ? 'hidden' : ''}`}>
+                    <div className={`space-y-4 ${activeTab !== 'learning' ? 'hidden' : ''}`}>
                         {/* Learning Objectives */}
                         <div className="form-control bg-base-100 rounded-lg border border-base-200 p-4 transition-all hover:border-primary/30">
                             <label className="label pb-1 flex items-center gap-2">
@@ -617,7 +617,7 @@ Example:
                     </div>
 
                     {/* Resources Tab */}
-                    <div className={`space-y-6 ${activeTab !== 'resources' ? 'hidden' : ''}`}>
+                    <div className={`space-y-4 ${activeTab !== 'resources' ? 'hidden' : ''}`}>
                         {/* Add Resource Form */}
                         <div className="card bg-base-100 p-6 rounded-xl border border-base-200 transition-all hover:border-primary/30">
                             <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
@@ -756,7 +756,7 @@ Example:
                     </div>
 
                     {/* AI Hints Tab */}
-                    <div className={`space-y-6 ${activeTab !== 'ai' ? 'hidden' : ''}`}>
+                    <div className={`space-y-4 ${activeTab !== 'ai' ? 'hidden' : ''}`}>
                         {/* Add AI Hint Form */}
                         <div className="card bg-base-100 p-6 rounded-xl border border-base-200 transition-all hover:border-primary/30">
                             <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
