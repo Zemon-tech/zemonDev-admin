@@ -4,18 +4,25 @@ interface Channel {
   _id: string;
   name: string;
   type: 'chat' | 'announcement' | 'showcase';
+  group: 'getting-started' | 'community' | 'hackathons';
+  description?: string;
   isActive: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  moderators: string[];
   permissions: {
     canMessage: boolean;
     canRead: boolean;
   };
-  updatedAt: string;
+  parentChannelId?: string | null;
   children?: Channel[];
 }
 
 interface ChannelTableProps {
   title: string;
   channels: Channel[];
+  onDelete: (channel: Channel) => void;
 }
 
 function formatDateTime(iso: string) {
@@ -25,7 +32,7 @@ function formatDateTime(iso: string) {
   return { date: d, time: t };
 }
 
-const ChannelTable: React.FC<ChannelTableProps> = ({ title, channels }) => {
+const ChannelTable: React.FC<ChannelTableProps> = ({ title, channels, onDelete }) => {
   return (
     <div className="mb-8">
       <h2 className="text-xl font-semibold mb-2">{title}</h2>
@@ -60,7 +67,7 @@ const ChannelTable: React.FC<ChannelTableProps> = ({ title, channels }) => {
                   </td>
                   <td>
                     <button className="btn btn-xs btn-outline btn-info mr-1">Edit</button>
-                    <button className="btn btn-xs btn-outline btn-error">Delete</button>
+                    <button className="btn btn-xs btn-outline btn-error" onClick={() => onDelete(parent)}>Delete</button>
                   </td>
                 </tr>
                 {parent.children && parent.children.map(child => (
@@ -77,7 +84,7 @@ const ChannelTable: React.FC<ChannelTableProps> = ({ title, channels }) => {
                     </td>
                     <td>
                       <button className="btn btn-xs btn-outline btn-info mr-1">Edit</button>
-                      <button className="btn btn-xs btn-outline btn-error">Delete</button>
+                      <button className="btn btn-xs btn-outline btn-error" onClick={() => onDelete(child)}>Delete</button>
                     </td>
                   </tr>
                 ))}

@@ -13,12 +13,12 @@ interface ModeratorOption {
 }
 interface AddChannelFormProps {
   onClose: () => void;
-  // Optionally: onSuccess?: () => void;
+  onChannelAdded?: () => void;
 }
 
 const initialPermissions = { canRead: true, canMessage: true };
 
-const AddChannelForm: React.FC<AddChannelFormProps> = ({ onClose }) => {
+const AddChannelForm: React.FC<AddChannelFormProps> = ({ onClose, onChannelAdded }) => {
   const apiFetch = useApi();
   const { user, isLoaded, isSignedIn } = useUser();
 
@@ -105,7 +105,7 @@ const AddChannelForm: React.FC<AddChannelFormProps> = ({ onClose }) => {
         body: JSON.stringify(payload),
       });
       onClose();
-      // Optionally: trigger a refresh in parent
+      if (onChannelAdded) onChannelAdded();
     } catch (err: any) {
       setSubmitError(err.message || 'Failed to create channel');
     } finally {

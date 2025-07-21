@@ -43,4 +43,32 @@ export const createChannel = async (req: Request, res: Response, next: NextFunct
   } catch (error) {
     next(error);
   }
+};
+
+// @desc    Delete a channel (parent deletes all children)
+// @route   DELETE /api/channels/:id
+// @access  Private/Admin
+export const deleteChannel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const channel = await ArenaChannel.findById(id);
+    if (!channel) {
+      res.status(404).json({ message: 'Channel not found' });
+      return;
+    }
+    if (!channel.parentChannelId) {
+      // Parent channel: delete all children and itself
+      const children = await ArenaChannel.find({ parentChannelId: channel._id });
+      const childIds = children.map((c) => c._id);
+      await ArenaChannel.deleteMany({ parentChannelId: channel._id });
+      await channel.deleteOne();
+      res.json({ message: 'Parent channel and all its child channels deleted', deletedParent: channel._id, deletedChildren: childIds });
+    } else {
+      // Child channel: delete only itself
+      await channel.deleteOne();
+      res.json({ message: 'Child channel deleted', deleted: channel._id });
+    }
+  } catch (error) {
+    next(error);
+  }
 }; 

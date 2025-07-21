@@ -41,21 +41,27 @@ const ChannelsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddModalOpen, setAddModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Channel | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Fetch channels logic
+  const fetchChannels = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await apiFetch('/channels');
+      setChannels(data);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch channels');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchChannels = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await apiFetch('/channels');
-        setChannels(data);
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch channels');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchChannels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiFetch]);
 
   // Process channels into groups and parent-child structure
@@ -86,6 +92,28 @@ const ChannelsPage: React.FC = () => {
     setGrouped(grouped);
   }, [channels]);
 
+  // Delete logic
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    setDeleteError(null);
+    try {
+      await apiFetch(`/channels/${deleteTarget._id}`, { method: 'DELETE' });
+      if (!deleteTarget.parentChannelId) {
+        // Parent: remove parent and all its children
+        setChannels((prev) => prev.filter(c => c._id !== deleteTarget._id && c.parentChannelId !== deleteTarget._id));
+      } else {
+        // Child: remove only the child
+        setChannels((prev) => prev.filter(c => c._id !== deleteTarget._id));
+      }
+      setDeleteTarget(null);
+    } catch (err: any) {
+      setDeleteError(err.message || 'Failed to delete channel');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   if (loading) return <div className="flex justify-center items-center h-32"><span className="loading loading-spinner loading-lg"></span></div>;
   if (error) return <div className="alert alert-error">Error: {error}</div>;
 
@@ -96,11 +124,31 @@ const ChannelsPage: React.FC = () => {
         <button className="btn btn-primary" onClick={() => setAddModalOpen(true)}>Add Channel</button>
       </div>
       <FullScreenModal isOpen={isAddModalOpen} onClose={() => setAddModalOpen(false)} title="Add Channel">
-        <AddChannelForm onClose={() => setAddModalOpen(false)} />
+        <AddChannelForm onClose={() => setAddModalOpen(false)} onChannelAdded={fetchChannels} />
       </FullScreenModal>
-      <ChannelTable title={groupNames['getting-started']} channels={grouped['getting-started'] || []} />
-      <ChannelTable title={groupNames['community']} channels={grouped['community'] || []} />
-      <ChannelTable title={groupNames['hackathons']} channels={grouped['hackathons'] || []} />
+      <ChannelTable title={groupNames['getting-started']} channels={grouped['getting-started'] || []} onDelete={(ch) => setDeleteTarget(ch)} />
+      <ChannelTable title={groupNames['community']} channels={grouped['community'] || []} onDelete={(ch) => setDeleteTarget(ch)} />
+      <ChannelTable title={groupNames['hackathons']} channels={grouped['hackathons'] || []} onDelete={(ch) => setDeleteTarget(ch)} />
+      {/* Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-base-100 rounded-lg shadow-lg p-8 max-w-md w-full">
+            <h3 className="text-lg font-bold mb-4 text-error">Confirm Delete</h3>
+            <p className="mb-4">
+              {(!deleteTarget.parentChannelId)
+                ? 'Deleting this parent channel will also delete all its child channels. This action cannot be undone.'
+                : 'Are you sure you want to delete this channel?'}
+            </p>
+            {deleteError && <div className="alert alert-error mb-2">{deleteError}</div>}
+            <div className="flex justify-end gap-2">
+              <button className="btn btn-ghost" onClick={() => setDeleteTarget(null)} disabled={deleteLoading}>Cancel</button>
+              <button className="btn btn-error" onClick={handleDelete} disabled={deleteLoading}>
+                {deleteLoading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
