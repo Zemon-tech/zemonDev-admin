@@ -71,4 +71,23 @@ export const deleteChannel = async (req: Request, res: Response, next: NextFunct
   } catch (error) {
     next(error);
   }
+};
+
+// @desc    Update a channel
+// @route   PUT /api/channels/:id
+// @access  Private/Admin
+export const updateChannel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const updateFields = req.body;
+    // Optionally: validate fields here
+    const updated = await ArenaChannel.findByIdAndUpdate(id, updateFields, { new: true });
+    if (!updated) {
+      res.status(404).json({ message: 'Channel not found' });
+      return;
+    }
+    res.json(updated);
+  } catch (error) {
+    next(error);
+  }
 }; 

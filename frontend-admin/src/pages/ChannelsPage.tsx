@@ -3,6 +3,7 @@ import { useApi } from '../lib/api';
 import ChannelTable from '../components/channels/ChannelTable';
 import FullScreenModal from '../components/common/FullScreenModal';
 import AddChannelForm from '../components/channels/AddChannelForm';
+import EditChannelModal from '../components/channels/EditChannelModal';
 
 // Channel type based on backend model
 interface Channel {
@@ -44,6 +45,7 @@ const ChannelsPage: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<Channel | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [editTarget, setEditTarget] = useState<Channel | null>(null);
 
   // Fetch channels logic
   const fetchChannels = async () => {
@@ -126,9 +128,10 @@ const ChannelsPage: React.FC = () => {
       <FullScreenModal isOpen={isAddModalOpen} onClose={() => setAddModalOpen(false)} title="Add Channel">
         <AddChannelForm onClose={() => setAddModalOpen(false)} onChannelAdded={fetchChannels} />
       </FullScreenModal>
-      <ChannelTable title={groupNames['getting-started']} channels={grouped['getting-started'] || []} onDelete={(ch) => setDeleteTarget(ch)} />
-      <ChannelTable title={groupNames['community']} channels={grouped['community'] || []} onDelete={(ch) => setDeleteTarget(ch)} />
-      <ChannelTable title={groupNames['hackathons']} channels={grouped['hackathons'] || []} onDelete={(ch) => setDeleteTarget(ch)} />
+      <EditChannelModal channel={editTarget} onClose={() => setEditTarget(null)} onChannelUpdated={fetchChannels} />
+      <ChannelTable title={groupNames['getting-started']} channels={grouped['getting-started'] || []} onDelete={(ch) => setDeleteTarget(ch)} onEdit={(ch) => setEditTarget(ch)} />
+      <ChannelTable title={groupNames['community']} channels={grouped['community'] || []} onDelete={(ch) => setDeleteTarget(ch)} onEdit={(ch) => setEditTarget(ch)} />
+      <ChannelTable title={groupNames['hackathons']} channels={grouped['hackathons'] || []} onDelete={(ch) => setDeleteTarget(ch)} onEdit={(ch) => setEditTarget(ch)} />
       {/* Confirmation Modal */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">

@@ -23,6 +23,7 @@ interface ChannelTableProps {
   title: string;
   channels: Channel[];
   onDelete: (channel: Channel) => void;
+  onEdit: (channel: Channel) => void;
 }
 
 function formatDateTime(iso: string) {
@@ -32,7 +33,7 @@ function formatDateTime(iso: string) {
   return { date: d, time: t };
 }
 
-const ChannelTable: React.FC<ChannelTableProps> = ({ title, channels, onDelete }) => {
+const ChannelTable: React.FC<ChannelTableProps> = ({ title, channels, onDelete, onEdit }) => {
   return (
     <div className="mb-8">
       <h2 className="text-xl font-semibold mb-2">{title}</h2>
@@ -66,7 +67,7 @@ const ChannelTable: React.FC<ChannelTableProps> = ({ title, channels, onDelete }
                     {(() => { const { date, time } = formatDateTime(parent.updatedAt); return (<><span>{date}</span><br /><span className="text-xs text-gray-500">{time}</span></>); })()}
                   </td>
                   <td>
-                    <button className="btn btn-xs btn-outline btn-info mr-1">Edit</button>
+                    <button className="btn btn-xs btn-outline btn-info mr-1" onClick={() => onEdit(parent)}>Edit</button>
                     <button className="btn btn-xs btn-outline btn-error" onClick={() => onDelete(parent)}>Delete</button>
                   </td>
                 </tr>
@@ -83,7 +84,7 @@ const ChannelTable: React.FC<ChannelTableProps> = ({ title, channels, onDelete }
                       {(() => { const { date, time } = formatDateTime(child.updatedAt); return (<><span>{date}</span><br /><span className="text-xs text-gray-500">{time}</span></>); })()}
                     </td>
                     <td>
-                      <button className="btn btn-xs btn-outline btn-info mr-1">Edit</button>
+                      <button className="btn btn-xs btn-outline btn-info mr-1" onClick={() => onEdit(child)}>Edit</button>
                       <button className="btn btn-xs btn-outline btn-error" onClick={() => onDelete(child)}>Delete</button>
                     </td>
                   </tr>
