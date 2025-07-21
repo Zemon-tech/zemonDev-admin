@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { useApi } from '../lib/api';
 import { Save, ArrowLeft, ArrowRight, Plus, X, Tag, Book, Target, Link2, MessageSquare, Trash2, Sparkles, FileText, Layers, CheckCircle2 } from 'lucide-react';
 
 export interface ICrucibleProblemData {
@@ -32,6 +32,7 @@ export interface ICrucibleProblemData {
 
 const CrucibleCreatePage: React.FC = () => {
     const navigate = useNavigate();
+    const apiFetch = useApi();
     const [formData, setFormData] = useState<ICrucibleProblemData>({
         title: '',
         description: '',
@@ -124,7 +125,10 @@ const CrucibleCreatePage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.post('/crucible', formData);
+            await apiFetch('/crucible/problems', {
+                method: 'POST',
+                body: JSON.stringify(formData),
+            });
             navigate('/admin/crucible');
         } catch (err) {
             console.error('Failed to create problem', err);

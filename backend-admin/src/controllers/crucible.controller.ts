@@ -43,6 +43,10 @@ export const getProblemById = async (req: Request, res: Response, next: NextFunc
 // @access  Private/Admin
 export const createProblem = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+        if (!req.auth || !req.auth.userId) {
+            res.status(401).json({ message: 'Not authorized' });
+            return;
+        }
         const { 
             title, 
             description, 
@@ -75,7 +79,7 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
             resources,
             aiHints,
             status,
-            createdBy: req.user?._id,
+            createdBy: new mongoose.Types.ObjectId(req.auth.userId),
         });
         const createdProblem = await problem.save();
         res.status(201).json(createdProblem);
@@ -185,6 +189,10 @@ export const getSolutionById = async (req: Request, res: Response, next: NextFun
 // @access  Private/Admin
 export const updateSolution = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+        if (!req.auth || !req.auth.userId) {
+            res.status(401).json({ message: 'Not authorized' });
+            return;
+        }
         const { id } = req.params;
         const { status, aiAnalysis, review } = req.body;
         
@@ -207,10 +215,10 @@ export const updateSolution = async (req: Request, res: Response, next: NextFunc
         
         if (review) {
             solution.reviews.push({
-                userId: req.user?._id as mongoose.Types.ObjectId,
+                userId: new mongoose.Types.ObjectId(req.auth.userId),
                 rating: review.rating,
                 comment: review.comment,
-                createdAt: new Date()
+                reviewedAt: new Date(),
             });
         }
         

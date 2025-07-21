@@ -1,40 +1,37 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+interface IChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
+
 export interface IAIChatHistory extends Document {
-  problemId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
-  sessionId: string;
+  problemId: mongoose.Types.ObjectId;
   title: string;
-  messages: {
-    role: 'user' | 'assistant';
-    content: string;
-    timestamp: Date;
-  }[];
-  tags: string[];
+  messages: IChatMessage[];
   status: 'active' | 'archived';
+  tags: string[];
   createdAt: Date;
   updatedAt: Date;
 }
 
 const AIChatHistorySchema: Schema = new Schema(
   {
-    problemId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'CrucibleProblem',
-      required: true,
-    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
-    sessionId: {
-      type: String,
+    problemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CrucibleProblem',
       required: true,
     },
     title: {
       type: String,
-      default: 'New Chat Session',
+      required: true,
     },
     messages: [
       {
@@ -53,17 +50,20 @@ const AIChatHistorySchema: Schema = new Schema(
         },
       },
     ],
-    tags: {
-      type: [String],
-      default: [],
-    },
     status: {
       type: String,
       enum: ['active', 'archived'],
       default: 'active',
     },
+    tags: {
+        type: [String],
+        default: [],
+    },
   },
   { timestamps: true }
 );
+
+// Index for efficient lookups
+AIChatHistorySchema.index({ userId: 1, problemId: 1 });
 
 export default mongoose.model<IAIChatHistory>('AIChatHistory', AIChatHistorySchema); 

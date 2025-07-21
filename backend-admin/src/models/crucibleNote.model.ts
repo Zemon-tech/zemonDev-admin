@@ -1,47 +1,52 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ICrucibleNote extends Document {
-  problemId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
+  problemId: mongoose.Types.ObjectId;
   content: string;
   tags: string[];
-  visibility: 'private' | 'public';
-  lastSaved: Date;
+  status: 'active' | 'archived';
+  visibility: 'private' | 'public' | 'community';
   createdAt: Date;
   updatedAt: Date;
 }
 
 const CrucibleNoteSchema: Schema = new Schema(
   {
-    problemId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'CrucibleProblem',
-      required: true,
-    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
+    problemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CrucibleProblem',
+      required: true,
+    },
     content: {
       type: String,
-      default: '',
+      required: true,
     },
     tags: {
       type: [String],
       default: [],
     },
+    status: {
+      type: String,
+      enum: ['active', 'archived'],
+      default: 'active',
+    },
     visibility: {
       type: String,
-      enum: ['private', 'public'],
+      enum: ['private', 'public', 'community'],
       default: 'private',
-    },
-    lastSaved: {
-      type: Date,
-      default: Date.now,
     },
   },
   { timestamps: true }
 );
+
+// Index for efficient lookups
+CrucibleNoteSchema.index({ userId: 1, problemId: 1 });
+CrucibleNoteSchema.index({ problemId: 1, visibility: 1 });
 
 export default mongoose.model<ICrucibleNote>('CrucibleNote', CrucibleNoteSchema); 

@@ -1,17 +1,8 @@
 import React from 'react';
-import { Menu, LogOut } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { Menu } from 'lucide-react';
+import { UserButton } from '@clerk/clerk-react';
 
 const Navbar: React.FC = () => {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   return (
     <div className="navbar bg-base-100 shadow-md sticky top-0 z-50 px-4">
         <div className="flex-none lg:hidden">
@@ -23,13 +14,7 @@ const Navbar: React.FC = () => {
             <a className="btn btn-ghost text-xl">Zemon Admin</a>
         </div>
         <div className="flex-none">
-            <button 
-              onClick={handleLogout}
-              className="btn btn-ghost gap-2"
-            >
-              <LogOut size={18} />
-              Logout
-            </button>
+            <UserButton afterSignOutUrl="/sign-in" />
         </div>
     </div>
   );

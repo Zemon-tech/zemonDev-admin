@@ -1,89 +1,50 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IWorkspaceState extends Document {
-  problemId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
-  layout: {
-    showProblemSidebar: boolean;
-    showChatSidebar: boolean;
-    sidebarWidths: {
-      problem: number;
-      chat: number;
-    };
-  };
-  activeContent: 'solution' | 'notes';
-  currentMode: string;
-  editorSettings: {
-    fontSize: number;
-    theme: string;
-    wordWrap: boolean;
-    autoSave: boolean;
-  };
+  problemId: mongoose.Types.ObjectId;
+  editorContent: string;
+  notesContent: string;
+  activeTab: 'solution' | 'notes' | 'diagrams' | 'research';
+  layoutState: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const WorkspaceStateSchema: Schema = new Schema(
   {
-    problemId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'CrucibleProblem',
-      required: true,
-    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
-    layout: {
-      showProblemSidebar: {
-        type: Boolean,
-        default: true,
-      },
-      showChatSidebar: {
-        type: Boolean,
-        default: false,
-      },
-      sidebarWidths: {
-        problem: {
-          type: Number,
-          default: 300,
-        },
-        chat: {
-          type: Number,
-          default: 300,
-        },
-      },
+    problemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CrucibleProblem',
+      required: true,
     },
-    activeContent: {
+    editorContent: {
       type: String,
-      enum: ['solution', 'notes'],
+      default: '',
+    },
+    notesContent: {
+      type: String,
+      default: '',
+    },
+    activeTab: {
+      type: String,
+      enum: ['solution', 'notes', 'diagrams', 'research'],
       default: 'solution',
     },
-    currentMode: {
-      type: String,
-      default: 'default',
-    },
-    editorSettings: {
-      fontSize: {
-        type: Number,
-        default: 14,
-      },
-      theme: {
-        type: String,
-        default: 'light',
-      },
-      wordWrap: {
-        type: Boolean,
-        default: true,
-      },
-      autoSave: {
-        type: Boolean,
-        default: true,
-      },
+    layoutState: {
+      type: Schema.Types.Mixed,
+      default: {},
     },
   },
   { timestamps: true }
 );
+
+// Index for efficient lookups
+WorkspaceStateSchema.index({ userId: 1, problemId: 1 });
 
 export default mongoose.model<IWorkspaceState>('WorkspaceState', WorkspaceStateSchema); 

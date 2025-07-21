@@ -1,70 +1,71 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface IProgressTracking extends Document {
-  problemId: mongoose.Types.ObjectId;
-  userId: mongoose.Types.ObjectId;
-  timeSpent: number; // Time in seconds
-  milestones: {
-    id: string;
-    description: string;
-    completed: boolean;
-    completedAt?: Date;
-  }[];
-  status: 'not-started' | 'in-progress' | 'completed' | 'abandoned';
-  startedAt?: Date;
+interface IMilestone {
+  id: string;
+  description: string;
+  completed: boolean;
   completedAt?: Date;
+}
+
+export interface IProgressTracking extends Document {
+  userId: mongoose.Types.ObjectId;
+  problemId: mongoose.Types.ObjectId;
+  currentMode: 'understand' | 'brainstorm' | 'draft' | 'review';
+  milestones: IMilestone[];
+  startTime: Date;
+  endTime?: Date;
+  timeSpentSeconds: number;
+  status: 'in-progress' | 'completed' | 'abandoned';
   createdAt: Date;
   updatedAt: Date;
 }
 
 const ProgressTrackingSchema: Schema = new Schema(
   {
-    problemId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'CrucibleProblem',
-      required: true,
-    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
-    timeSpent: {
-      type: Number,
-      default: 0,
+    problemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CrucibleProblem',
+      required: true,
+    },
+    currentMode: {
+      type: String,
+      enum: ['understand', 'brainstorm', 'draft', 'review'],
+      default: 'understand',
     },
     milestones: [
       {
-        id: {
-          type: String,
-          required: true,
-        },
-        description: {
-          type: String,
-          required: true,
-        },
-        completed: {
-          type: Boolean,
-          default: false,
-        },
-        completedAt: {
-          type: Date,
-        },
+        id: { type: String, required: true },
+        description: { type: String, required: true },
+        completed: { type: Boolean, default: false },
+        completedAt: { type: Date },
       },
     ],
+    startTime: {
+      type: Date,
+      default: Date.now,
+    },
+    endTime: {
+      type: Date,
+    },
+    timeSpentSeconds: {
+      type: Number,
+      default: 0,
+    },
     status: {
       type: String,
-      enum: ['not-started', 'in-progress', 'completed', 'abandoned'],
-      default: 'not-started',
-    },
-    startedAt: {
-      type: Date,
-    },
-    completedAt: {
-      type: Date,
+      enum: ['in-progress', 'completed', 'abandoned'],
+      default: 'in-progress',
     },
   },
   { timestamps: true }
 );
+
+// Add index for efficient lookups
+ProgressTrackingSchema.index({ userId: 1, problemId: 1 });
 
 export default mongoose.model<IProgressTracking>('ProgressTracking', ProgressTrackingSchema); 

@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Save, ArrowLeft, ArrowRight, X, MessageSquare, FileText, Layers, Sparkles, Book, CheckCircle2, Target } from 'lucide-react';
-import api from '../services/api';
-import { useFetch } from '../hooks/useFetch';
+import { useApi } from '../lib/api';
 import type { ICrucibleProblemData } from './CrucibleCreatePage';
 
 const CrucibleEditPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { data: problem, isLoading, error } = useFetch<ICrucibleProblemData>(`/crucible/${id}`);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const apiFetch = useApi();
 
     const [formData, setFormData] = useState<ICrucibleProblemData>({
         title: '',
@@ -51,18 +52,26 @@ const CrucibleEditPage: React.FC = () => {
     ];
 
     useEffect(() => {
-        if (problem) {
-            setFormData({
-                ...problem,
-                learningObjectives: problem.learningObjectives || [],
-                prerequisites: problem.prerequisites || [],
-                userPersonas: problem.userPersonas || [],
-                resources: problem.resources || [],
-                aiHints: problem.aiHints || [],
-                status: problem.status || 'draft',
-            });
-        }
-    }, [problem]);
+        const fetchProblem = async () => {
+            try {
+                const data = await apiFetch(`/crucible/problems/${id}`);
+                setFormData({
+                    ...data,
+                    learningObjectives: data.learningObjectives || [],
+                    prerequisites: data.prerequisites || [],
+                    userPersonas: data.userPersonas || [],
+                    resources: data.resources || [],
+                    aiHints: data.aiHints || [],
+                    status: data.status || 'draft',
+                });
+            } catch (err) {
+                setError('Failed to fetch problem');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchProblem();
+    }, [id, apiFetch]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -145,7 +154,10 @@ const CrucibleEditPage: React.FC = () => {
         setIsSaving(true);
         setSaveError(null);
         try {
-            await api.put(`/crucible/${id}`, formData);
+            await apiFetch(`/crucible/problems/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(formData),
+            });
             navigate('/admin/crucible');
         } catch (err) {
             console.error('Failed to update problem', err);

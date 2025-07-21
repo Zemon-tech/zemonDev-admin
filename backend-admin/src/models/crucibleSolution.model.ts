@@ -1,10 +1,15 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-interface Review {
+interface IAnalysisResultRef {
+  analysisId: mongoose.Types.ObjectId;
+  type: 'static' | 'dynamic' | 'complexity' | 'performance' | 'security' | 'custom';
+}
+
+interface IReview {
   userId: mongoose.Types.ObjectId;
-  rating: number;
-  comment: string;
-  createdAt: Date;
+  rating: number; // e.g., 1-5 stars
+  comment?: string;
+  reviewedAt: Date;
 }
 
 export interface ICrucibleSolution extends Document {
@@ -12,17 +17,14 @@ export interface ICrucibleSolution extends Document {
   userId: mongoose.Types.ObjectId;
   content: string;
   status: 'draft' | 'submitted' | 'reviewed';
-  aiAnalysis: {
-    score: number;
-    feedback: string;
-    suggestions: string[];
-  };
-  reviews: Review[];
+  aiAnalysis?: IAnalysisResultRef;
+  reviews: IReview[];
   metrics: {
-    upvotes: number;
-    downvotes: number;
-    views: number;
+    executionTimeMs?: number;
+    memoryUsageBytes?: number;
+    score?: number;
   };
+  submittedAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,7 +43,7 @@ const CrucibleSolutionSchema: Schema = new Schema(
     },
     content: {
       type: String,
-      required: [true, 'Solution content is required'],
+      required: true,
     },
     status: {
       type: String,
@@ -49,19 +51,13 @@ const CrucibleSolutionSchema: Schema = new Schema(
       default: 'draft',
     },
     aiAnalysis: {
-      score: {
-        type: Number,
-        min: 0,
-        max: 100,
-        default: 0,
+      analysisId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'SolutionAnalysis',
       },
-      feedback: {
+      type: {
         type: String,
-        default: '',
-      },
-      suggestions: {
-        type: [String],
-        default: [],
+        enum: ['static', 'dynamic', 'complexity', 'performance', 'security', 'custom'],
       },
     },
     reviews: [
@@ -79,30 +75,36 @@ const CrucibleSolutionSchema: Schema = new Schema(
         },
         comment: {
           type: String,
-          trim: true,
         },
-        createdAt: {
+        reviewedAt: {
           type: Date,
           default: Date.now,
         },
       },
     ],
     metrics: {
-      upvotes: {
+      executionTimeMs: {
         type: Number,
-        default: 0,
       },
-      downvotes: {
+      memoryUsageBytes: {
         type: Number,
-        default: 0,
       },
-      views: {
+      score: {
         type: Number,
-        default: 0,
+        min: 0,
+        max: 100,
       },
+    },
+    submittedAt: {
+      type: Date,
+      default: Date.now,
     },
   },
   { timestamps: true }
 );
+
+// Add indexes for better query performance
+CrucibleSolutionSchema.index({ problemId: 1, userId: 1 });
+CrucibleSolutionSchema.index({ submittedAt: -1 });
 
 export default mongoose.model<ICrucibleSolution>('CrucibleSolution', CrucibleSolutionSchema); 

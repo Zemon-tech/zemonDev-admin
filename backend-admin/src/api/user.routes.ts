@@ -5,16 +5,14 @@ import {
   updateUser,
   deleteUser,
 } from '../controllers/user.controller';
-import { protect, admin } from '../middleware/auth.middleware';
+import { protect, checkRole } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.route('/')
-  .get(protect, admin, getUsers);
+router.use(...(protect as any));
+router.use(checkRole(['admin']));
 
-router.route('/:id')
-  .get(protect, admin, getUserById)
-  .put(protect, admin, updateUser)
-  .delete(protect, admin, deleteUser);
+router.route('/').get(getUsers);
+router.route('/:id').get(getUserById).put(updateUser).delete(deleteUser);
 
-export default router; 
+export default router;

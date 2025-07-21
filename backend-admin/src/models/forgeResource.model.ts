@@ -3,19 +3,18 @@ import mongoose, { Schema, Document } from 'mongoose';
 interface Review {
   userId: mongoose.Types.ObjectId;
   rating: number;
-  comment: string;
+  comment?: string;
   createdAt: Date;
 }
 
 export interface IForgeResource extends Document {
   title: string;
   type: 'article' | 'video' | 'book' | 'course' | 'tool' | 'repository' | 'documentation';
-  url?: string;
+  url: string;
   description: string;
   content?: string;
   tags: string[];
   difficulty: 'beginner' | 'intermediate' | 'advanced';
-  isExternal: boolean;
   createdBy: mongoose.Types.ObjectId;
   reviews: Review[];
   metrics: {
@@ -23,6 +22,7 @@ export interface IForgeResource extends Document {
     bookmarks: number;
     rating: number;
   };
+  isExternal: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,11 +42,7 @@ const ForgeResourceSchema: Schema = new Schema(
     url: {
       type: String,
       trim: true,
-      required: false,
-    },
-    isExternal: {
-      type: Boolean,
-      default: function (this: any) { return !!this.url; },
+      // not required: internal resources may not have a URL
     },
     description: {
       type: String,
@@ -110,15 +106,17 @@ const ForgeResourceSchema: Schema = new Schema(
         max: 5,
       },
     },
+    isExternal: {
+      type: Boolean,
+      // Use a regular function to access 'this' (the document)
+      default: function(this: any) { return !!this.url; },
+    },
   },
   { timestamps: true }
 );
 
-// Pre-save hook to set isExternal dynamically
-ForgeResourceSchema.pre('save', function (next) {
-  // @ts-ignore
-  this.isExternal = !!this.url;
-  next();
-});
+// Index for efficient lookups
+ForgeResourceSchema.index({ type: 1, difficulty: 1 });
+ForgeResourceSchema.index({ createdBy: 1 });
 
 export default mongoose.model<IForgeResource>('ForgeResource', ForgeResourceSchema); 

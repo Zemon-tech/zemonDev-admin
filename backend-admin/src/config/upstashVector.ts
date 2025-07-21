@@ -25,7 +25,7 @@ export const vectorClient = new Index({
 
 // Initialize Google Generative AI
 const genAI = new GoogleGenerativeAI(GEMINI_EMBEDDING_API_KEY || '');
-const embeddingModel = genAI.getGenerativeModel({ model: "embedding-001" });
+const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
 
 /**
  * Generate embedding for text using Google's text-embedding-004 model

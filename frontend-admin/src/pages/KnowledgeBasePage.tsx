@@ -1,8 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { getKnowledgeBaseDocuments, deleteKnowledgeBaseDocument } from '../services/knowledgeBaseApi';
-import type { KnowledgeBaseDocument } from '../services/knowledgeBaseApi';
 import { Plus, Edit, Trash2, Search, FileText, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useApi } from '../lib/api';
+
+export interface KnowledgeBaseDocument {
+  _id?: string;
+  title: string;
+  content: string;
+  documentType: 'text' | 'url' | 'pdf' | 'markdown' | 'code_snippet' | 'json';
+  url?: string;
+  category?: string;
+  tags?: string[];
+  lastIndexedAt?: string;
+  isIndexed?: boolean;
+}
 
 const KnowledgeBasePage: React.FC = () => {
   const [documents, setDocuments] = useState<KnowledgeBaseDocument[]>([]);
@@ -12,11 +23,12 @@ const KnowledgeBasePage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
+  const apiFetch = useApi();
 
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      const response = await getKnowledgeBaseDocuments(page);
+      const response = await apiFetch(`/admin/knowledge-base/documents?page=${page}`);
       setDocuments(response.documents);
       setTotalPages(response.pages);
       setError(null);
@@ -30,12 +42,12 @@ const KnowledgeBasePage: React.FC = () => {
 
   useEffect(() => {
     fetchDocuments();
-  }, [page]);
+  }, [page, apiFetch]);
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this document? This will also remove it from the vector database.')) {
       try {
-        await deleteKnowledgeBaseDocument(id);
+        await apiFetch(`/admin/knowledge-base/documents/${id}`, { method: 'DELETE' });
         fetchDocuments(); // Refresh the list
       } catch (err) {
         setError('Failed to delete document. Please try again.');

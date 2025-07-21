@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { useFetch } from '../hooks/useFetch';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Edit, Trash2, Plus } from 'lucide-react';
-import api from '../services/api';
+import { useApi } from '../lib/api';
 
 interface IForgeResource {
     _id: string;
@@ -17,16 +16,31 @@ interface IForgeResource {
 }
 
 const ForgeListPage: React.FC = () => {
-    const { data: resources, setData: setResources, isLoading, error } = useFetch<IForgeResource[]>('/forge');
+    const [resources, setResources] = useState<IForgeResource[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [resourceToDelete, setResourceToDelete] = useState<IForgeResource | null>(null);
+    const apiFetch = useApi();
+
+    useEffect(() => {
+        const fetchResources = async () => {
+            try {
+                const data = await apiFetch('/forge');
+                setResources(data);
+            } catch (err) {
+                setError('Failed to fetch resources');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchResources();
+    }, [apiFetch]);
 
     const handleDelete = async () => {
         if (!resourceToDelete) return;
         try {
-            await api.delete(`/forge/${resourceToDelete._id}`);
-            if(resources) {
-                setResources(resources.filter(r => r._id !== resourceToDelete._id));
-            }
+            await apiFetch(`/forge/${resourceToDelete._id}`, { method: 'DELETE' });
+            setResources(resources.filter(r => r._id !== resourceToDelete._id));
             setResourceToDelete(null);
         } catch (err) {
             console.error('Failed to delete resource', err);

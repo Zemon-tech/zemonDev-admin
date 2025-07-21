@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useFetch } from '../hooks/useFetch';
-import api from '../services/api';
+import { useApi } from '../lib/api';
 
 interface IUser {
     _id: string;
@@ -13,24 +12,39 @@ interface IUser {
 const UserEditPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { data: user, isLoading, error } = useFetch<IUser>(`/users/${id}`);
+    const [user, setUser] = useState<IUser | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const apiFetch = useApi();
 
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [role, setRole] = useState<'admin' | 'user'>('user');
 
     useEffect(() => {
-        if (user) {
-            setFullName(user.fullName);
-            setEmail(user.email);
-            setRole(user.role);
-        }
-    }, [user]);
+        const fetchUser = async () => {
+            try {
+                const data = await apiFetch(`/users/${id}`);
+                setUser(data);
+                setFullName(data.fullName);
+                setEmail(data.email);
+                setRole(data.role);
+            } catch (err) {
+                setError('Failed to fetch user');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchUser();
+    }, [id, apiFetch]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.put(`/users/${id}`, { fullName, email, role });
+            await apiFetch(`/users/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ fullName, email, role }),
+            });
             navigate('/admin/users');
         } catch (err) {
             console.error('Failed to update user', err);

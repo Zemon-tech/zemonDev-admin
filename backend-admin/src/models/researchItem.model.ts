@@ -1,53 +1,61 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IResearchItem extends Document {
-  problemId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
+  problemId: mongoose.Types.ObjectId;
   title: string;
-  type: 'link' | 'note' | 'code' | 'image' | 'document' | 'other';
+  type: 'article' | 'code-snippet' | 'documentation' | 'video' | 'other';
   content: string;
-  url?: string;
+  notes: string;
   tags: string[];
+  status: 'active' | 'archived';
   createdAt: Date;
   updatedAt: Date;
 }
 
 const ResearchItemSchema: Schema = new Schema(
   {
-    problemId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'CrucibleProblem',
-      required: true,
-    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
+    problemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CrucibleProblem',
+      required: true,
+    },
     title: {
       type: String,
-      required: [true, 'Please provide a title'],
-      trim: true,
+      required: true,
     },
     type: {
       type: String,
-      enum: ['link', 'note', 'code', 'image', 'document', 'other'],
-      required: true,
+      enum: ['article', 'code-snippet', 'documentation', 'video', 'other'],
+      default: 'article',
     },
     content: {
       type: String,
-      default: '',
+      required: true,
     },
-    url: {
+    notes: {
       type: String,
-      trim: true,
+      default: '',
     },
     tags: {
       type: [String],
       default: [],
     },
+    status: {
+      type: String,
+      enum: ['active', 'archived'],
+      default: 'active',
+    },
   },
   { timestamps: true }
 );
+
+// Index for efficient lookups
+ResearchItemSchema.index({ userId: 1, problemId: 1 });
 
 export default mongoose.model<IResearchItem>('ResearchItem', ResearchItemSchema); 

@@ -1,16 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Save, ArrowLeft, FileText, Layers, Tag, Link2, MessageSquare, Edit } from 'lucide-react';
-import type { KnowledgeBaseDocument } from '../services/knowledgeBaseApi';
-import { 
-  createKnowledgeBaseDocument, 
-  updateKnowledgeBaseDocument, 
-  getKnowledgeBaseDocumentById 
-} from '../services/knowledgeBaseApi';
+import type { KnowledgeBaseDocument } from './KnowledgeBasePage';
+import { useApi } from '../lib/api';
 
 const KnowledgeBaseEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const apiFetch = useApi();
   const isEditMode = Boolean(id);
 
   const [title, setTitle] = useState('');
@@ -26,12 +23,11 @@ const KnowledgeBaseEditPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Fetch document data if in edit mode
     const fetchDocument = async () => {
       if (id) {
         try {
           setIsLoading(true);
-          const document = await getKnowledgeBaseDocumentById(id);
+          const document = await apiFetch(`/admin/knowledge-base/documents/${id}`);
           setTitle(document.title);
           setContent(document.content);
           setDocumentType(document.documentType);
@@ -50,14 +46,13 @@ const KnowledgeBaseEditPage: React.FC = () => {
     };
 
     fetchDocument();
-  }, [id, navigate]);
+  }, [id, navigate, apiFetch]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
       
-      // If PDF, set document type accordingly
       if (selectedFile.type === 'application/pdf') {
         setDocumentType('pdf');
       }
@@ -70,55 +65,23 @@ const KnowledgeBaseEditPage: React.FC = () => {
     setError(null);
 
     try {
-      // Convert tags string to array
       const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
       
-      // Create FormData for file uploads
       const formData = new FormData();
       formData.append('title', title);
+      formData.append('documentType', documentType);
+      if (sourceUrl) formData.append('sourceUrl', sourceUrl);
+      if (category) formData.append('category', category);
+      tagsArray.forEach(tag => formData.append('tags[]', tag));
       
       if (file) {
-        // If we have a file, we'll handle it differently based on type
-        if (documentType === 'pdf') {
-          // For PDFs, we'll read as base64 and send that as content
-          const reader = new FileReader();
-          reader.onload = async () => {
-            const base64String = reader.result as string;
-            formData.append('content', base64String.split(',')[1]); // Remove data URL prefix
-            formData.append('documentType', documentType);
-            formData.append('sourceUrl', sourceUrl);
-            formData.append('category', category);
-            tagsArray.forEach(tag => formData.append('tags[]', tag));
-            
-            await saveDocument(formData);
-          };
-          reader.readAsDataURL(file);
-          return; // Early return since we're handling this asynchronously
-        } else {
-          // For other file types, read as text
-          const reader = new FileReader();
-          reader.onload = async () => {
-            formData.append('content', reader.result as string);
-            formData.append('documentType', documentType);
-            formData.append('sourceUrl', sourceUrl);
-            formData.append('category', category);
-            tagsArray.forEach(tag => formData.append('tags[]', tag));
-            
-            await saveDocument(formData);
-          };
-          reader.readAsText(file);
-          return; // Early return since we're handling this asynchronously
-        }
+        formData.append('file', file);
       } else {
-        // No file, just use the content from textarea
         formData.append('content', content);
-        formData.append('documentType', documentType);
-        formData.append('sourceUrl', sourceUrl);
-        formData.append('category', category);
-        tagsArray.forEach(tag => formData.append('tags[]', tag));
-        
-        await saveDocument(formData);
       }
+      
+      await saveDocument(formData);
+
     } catch (err) {
       console.error('Error preparing document data:', err);
       setError('Failed to prepare document data. Please try again.');
@@ -129,11 +92,15 @@ const KnowledgeBaseEditPage: React.FC = () => {
   const saveDocument = async (formData: FormData) => {
     try {
       if (isEditMode && id) {
-        // Update existing document
-        await updateKnowledgeBaseDocument(id, formData);
+        await apiFetch(`/admin/knowledge-base/documents/${id}`, {
+          method: 'PUT',
+          body: formData,
+        });
       } else {
-        // Create new document
-        await createKnowledgeBaseDocument(formData);
+        await apiFetch('/admin/knowledge-base/documents', {
+          method: 'POST',
+          body: formData,
+        });
       }
       
       navigate('/admin/knowledge-base');

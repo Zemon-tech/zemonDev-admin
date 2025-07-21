@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { useFetch } from '../hooks/useFetch';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Edit, Trash2 } from 'lucide-react';
-import api from '../services/api';
+import { useApi } from '../lib/api';
 
 interface IUser {
   _id: string;
@@ -12,19 +11,34 @@ interface IUser {
 }
 
 const UserListPage: React.FC = () => {
-  const { data: users, setData: setUsers, isLoading, error } = useFetch<IUser[]>('/users');
+  const [users, setUsers] = useState<IUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [userToDelete, setUserToDelete] = useState<IUser | null>(null);
+  const apiFetch = useApi();
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const data = await apiFetch('/users');
+        setUsers(data);
+      } catch (err) {
+        setError('Failed to fetch users');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchUsers();
+  }, [apiFetch]);
 
   const handleDelete = async () => {
     if (!userToDelete) return;
     try {
-        await api.delete(`/users/${userToDelete._id}`);
-        if(users) {
-            setUsers(users.filter((u: IUser) => u._id !== userToDelete._id));
-        }
-        setUserToDelete(null);
+      await apiFetch(`/users/${userToDelete._id}`, { method: 'DELETE' });
+      setUsers(users.filter((u: IUser) => u._id !== userToDelete._id));
+      setUserToDelete(null);
     } catch (err) {
-        console.error('Failed to delete user', err);
+      console.error('Failed to delete user', err);
     }
   };
 

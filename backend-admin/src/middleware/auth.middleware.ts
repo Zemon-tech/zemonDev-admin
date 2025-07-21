@@ -1,54 +1,80 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import User, { IUser } from '../models/user.model';
+import { ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node';
+import { asyncHandler } from '../utils/asyncHandler';
+import { AppError } from '../utils/AppError';
+import User from '../models/user.model';
+import { UserRole } from '../models';
 
-// Extend the Express Request interface to include the user property
+// Extend the Express Request interface to include user and auth
 declare global {
   namespace Express {
     interface Request {
-      user?: IUser;
+      user?: any;
+      auth?: {
+        userId: string;
+        sessionId: string;
+        getToken: () => Promise<string>;
+      };
+      userRole?: any; // Add userRole property
     }
   }
 }
 
-export const protect = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  let token;
+/**
+ * Middleware to protect routes using Clerk authentication.
+ */
+export const protect = [
+  (req: Request, res: Response, next: NextFunction) => {
+    next();
+  },
+  ClerkExpressRequireAuth({
+    onError: (err: Error) => {
+      console.error('[CLERK AUTH ERROR]', err);
+    }
+  }),
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.auth || !req.auth.userId) {
+      return next(new AppError('User authentication data not found after validation.', 500));
+    }
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
-      token = req.headers.authorization.split(' ')[1];
-      const jwtSecret = process.env.JWT_SECRET;
-      
-      if (!jwtSecret) {
-        throw new Error('JWT_SECRET not found in environment variables');
-      }
-
-      const decoded = jwt.verify(token, jwtSecret) as { id: string };
-      const user = await User.findById(decoded.id).select('-password');
-      
+      const user = await User.findOne({ clerkId: req.auth.userId });
       if (!user) {
-        res.status(401).json({ message: 'Not authorized, user not found' });
-        return;
+        return next(new AppError('User not found in application database.', 404));
       }
-
       req.user = user;
       next();
     } catch (error) {
-      console.error(error);
-      res.status(401).json({ message: 'Not authorized, token failed' });
+      console.error('Error fetching user data from database:', error);
+      next(new AppError('An error occurred while authenticating the user.', 500));
     }
-    return;
-  }
+  })
+];
 
-  if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
-  }
-};
-
-export const admin = (req: Request, res: Response, next: NextFunction): void => {
-    if (req.user && req.user.role === 'admin') {
-      next();
-    } else {
-      res.status(403).json({ message: 'Not authorized as an admin' });
+/**
+ * Middleware to check if user has required role
+ * @param roles Array of roles that are allowed to access the route
+ */
+export const checkRole = (roles: ('admin' | 'moderator')[]) => {
+  return asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user || !req.user._id) {
+      return next(new AppError('Unauthorized', 401));
     }
-  }; 
+
+    const userId = req.user._id;
+
+    const query: any = {
+      userId,
+      role: { $in: roles }
+    };
+
+    const userRole = await UserRole.findOne(query);
+
+    if (!userRole) {
+      return next(new AppError(`Access denied. Required role: ${roles.join(' or ')}`, 403));
+    }
+
+    req.userRole = userRole;
+    next();
+  });
+}; 

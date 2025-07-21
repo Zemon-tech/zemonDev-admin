@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
-import { useFetch } from '../hooks/useFetch';
+import { useApi } from '../lib/api';
 import ForgeResourceForm from './ForgeResourceForm';
 import type { IForgeResourceData } from './ForgeResourceForm';
 
 const ForgeEditPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { data: resource, isLoading, error } = useFetch<IForgeResourceData>(`/forge/${id}`);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const apiFetch = useApi();
     
     const [formData, setFormData] = useState<IForgeResourceData>({
         title: '',
@@ -22,24 +23,35 @@ const ForgeEditPage: React.FC = () => {
     });
 
     useEffect(() => {
-        if (resource) {
-            setFormData({
-                title: resource.title,
-                type: resource.type,
-                url: resource.url,
-                description: resource.description,
-                tags: resource.tags,
-                difficulty: resource.difficulty,
-                isExternal: typeof resource.isExternal === 'boolean' ? resource.isExternal : !!resource.url,
-                content: resource.content || '',
-            });
-        }
-    }, [resource]);
+        const fetchResource = async () => {
+            try {
+                const data = await apiFetch(`/forge/${id}`);
+                setFormData({
+                    title: data.title,
+                    type: data.type,
+                    url: data.url,
+                    description: data.description,
+                    tags: data.tags,
+                    difficulty: data.difficulty,
+                    isExternal: typeof data.isExternal === 'boolean' ? data.isExternal : !!data.url,
+                    content: data.content || '',
+                });
+            } catch (err) {
+                setError('Failed to fetch resource');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchResource();
+    }, [id, apiFetch]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.put(`/forge/${id}`, formData);
+            await apiFetch(`/forge/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(formData),
+            });
             navigate('/admin/forge');
         } catch (err) {
             console.error('Failed to update resource', err);

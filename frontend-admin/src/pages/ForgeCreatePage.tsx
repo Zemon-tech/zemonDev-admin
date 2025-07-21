@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import api from '../services/api';
+import { useApi } from '../lib/api';
 import ForgeResourceForm from './ForgeResourceForm';
 import type { IForgeResourceData } from './ForgeResourceForm';
 
 const ForgeCreatePage: React.FC = () => {
     const navigate = useNavigate();
+    const apiFetch = useApi();
     const [formData, setFormData] = useState<IForgeResourceData>({
         title: '',
         type: 'article',
@@ -21,7 +22,10 @@ const ForgeCreatePage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.post('/forge', formData);
+            await apiFetch('/forge', {
+                method: 'POST',
+                body: JSON.stringify(formData),
+            });
             navigate('/admin/forge');
         } catch (err) {
             console.error('Failed to create resource', err);

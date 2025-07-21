@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { useFetch } from '../hooks/useFetch';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Edit, Trash2, Plus, Search, Filter } from 'lucide-react';
-import api from '../services/api';
+import { Edit, Trash2, Plus, Search } from 'lucide-react';
+import { useApi } from '../lib/api';
 
 interface ICrucibleProblem {
     _id: string;
@@ -15,19 +14,34 @@ interface ICrucibleProblem {
 }
 
 const CrucibleListPage: React.FC = () => {
-    const { data: problems, setData: setProblems, isLoading, error } = useFetch<ICrucibleProblem[]>('/crucible');
+    const [problems, setProblems] = useState<ICrucibleProblem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [problemToDelete, setProblemToDelete] = useState<ICrucibleProblem | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterDifficulty, setFilterDifficulty] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
+    const apiFetch = useApi();
+
+    useEffect(() => {
+        const fetchProblems = async () => {
+            try {
+                const data = await apiFetch('/crucible/problems');
+                setProblems(data);
+            } catch (err) {
+                setError('Failed to fetch problems');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchProblems();
+    }, [apiFetch]);
 
     const handleDelete = async () => {
         if (!problemToDelete) return;
         try {
-            await api.delete(`/crucible/${problemToDelete._id}`);
-            if(problems) {
-                setProblems(problems.filter(p => p._id !== problemToDelete._id));
-            }
+            await apiFetch(`/crucible/problems/${problemToDelete._id}`, { method: 'DELETE' });
+            setProblems(problems.filter(p => p._id !== problemToDelete._id));
             setProblemToDelete(null);
         } catch (err) {
             console.error('Failed to delete problem', err);

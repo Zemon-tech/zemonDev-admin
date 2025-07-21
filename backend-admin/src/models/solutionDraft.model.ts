@@ -1,55 +1,44 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface ISolutionDraft extends Document {
-  problemId: mongoose.Types.ObjectId;
-  userId: mongoose.Types.ObjectId;
+interface IDraftVersion {
   content: string;
-  versions: {
-    versionId: string;
-    content: string;
-    description: string;
-    createdAt: Date;
-  }[];
+  timestamp: Date;
+  description?: string;
+}
+
+export interface ISolutionDraft extends Document {
+  userId: mongoose.Types.ObjectId;
+  problemId: mongoose.Types.ObjectId;
+  currentContent: string;
+  versions: IDraftVersion[];
   status: 'active' | 'archived';
-  lastSaved: Date;
+  lastEdited: Date;
+  autoSaveEnabled: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const SolutionDraftSchema: Schema = new Schema(
   {
-    problemId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'CrucibleProblem',
-      required: true,
-    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
-    content: {
+    problemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CrucibleProblem',
+      required: true,
+    },
+    currentContent: {
       type: String,
-      default: '',
+      required: true,
     },
     versions: [
       {
-        versionId: {
-          type: String,
-          required: true,
-        },
-        content: {
-          type: String,
-          required: true,
-        },
-        description: {
-          type: String,
-          default: '',
-        },
-        createdAt: {
-          type: Date,
-          default: Date.now,
-        },
+        content: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now },
+        description: { type: String },
       },
     ],
     status: {
@@ -57,12 +46,19 @@ const SolutionDraftSchema: Schema = new Schema(
       enum: ['active', 'archived'],
       default: 'active',
     },
-    lastSaved: {
+    lastEdited: {
       type: Date,
       default: Date.now,
+    },
+    autoSaveEnabled: {
+      type: Boolean,
+      default: true,
     },
   },
   { timestamps: true }
 );
+
+// Index for efficient lookups
+SolutionDraftSchema.index({ userId: 1, problemId: 1 });
 
 export default mongoose.model<ISolutionDraft>('SolutionDraft', SolutionDraftSchema); 
