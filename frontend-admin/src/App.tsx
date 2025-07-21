@@ -13,6 +13,7 @@ import CrucibleEditPage from './pages/CrucibleEditPage';
 import KnowledgeBasePage from './pages/KnowledgeBasePage';
 import KnowledgeBaseNewPage from './pages/KnowledgeBaseNewPage';
 import KnowledgeBaseEditPage from './pages/KnowledgeBaseEditPage';
+import ChannelsPage from './pages/ChannelsPage';
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
                     <Route path="/admin/knowledge-base" element={<KnowledgeBasePage />} />
                     <Route path="/admin/knowledge-base/new" element={<KnowledgeBaseNewPage />} />
                     <Route path="/admin/knowledge-base/edit/:id" element={<KnowledgeBaseEditPage />} />
+                    <Route path="/admin/channels" element={<ChannelsPage />} />
                     <Route path="/" element={<Navigate to="/admin/dashboard" />} />
                   </Route>
                 </Routes>

@@ -8,7 +8,32 @@ import mongoose from 'mongoose';
 // @access  Private/Admin
 export const getUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const users = await User.find({});
+    const users = await User.aggregate([
+      {
+        $lookup: {
+          from: 'userroles', // The collection name for UserRole model
+          localField: '_id',
+          foreignField: 'userId',
+          as: 'roleInfo',
+        },
+      },
+      {
+        $unwind: {
+          path: '$roleInfo',
+          preserveNullAndEmptyArrays: true, // Keep users even if they don't have a role
+        },
+      },
+      {
+        $addFields: {
+          role: { $ifNull: ['$roleInfo.role', 'user'] },
+        },
+      },
+      {
+        $project: {
+          roleInfo: 0, // Exclude the roleInfo field from the final output
+        },
+      },
+    ]);
     res.json(users);
   } catch (error) {
     next(error);

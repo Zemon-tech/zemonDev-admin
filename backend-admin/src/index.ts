@@ -6,6 +6,7 @@ import userRoutes from './api/user.routes';
 import forgeRoutes from './api/forge.routes';
 import crucibleRoutes from './api/crucible.routes';
 import knowledgeBaseRoutes from './api/knowledgeBase.routes';
+import arenaChannelRoutes from './api/arenaChannel.routes';
 import errorHandler from './middleware/error.middleware';
 
 // Import all models to ensure they are registered with Mongoose
@@ -36,6 +37,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/forge', forgeRoutes);
 app.use('/api/crucible', crucibleRoutes);
 app.use('/api/admin/knowledge-base/documents', knowledgeBaseRoutes);
+app.use('/api', arenaChannelRoutes);
 
 const PORT = process.env.PORT || 5001;
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Flame, BookOpen, Database } from 'lucide-react';
+import { LayoutDashboard, Users, Flame, BookOpen, Database, MessageSquare } from 'lucide-react';
 
 // Custom sidebar toggle icon
 const SidebarCloseIcon = () => (
@@ -40,6 +40,7 @@ function ThemeSwitcher() {
 const navItems = [
   { to: "/admin/dashboard", label: "Dashboard", icon: <LayoutDashboard strokeWidth={1.5} /> },
   { to: "/admin/users", label: "Users", icon: <Users strokeWidth={1.5} /> },
+  { to: "/admin/channels", label: "Channels", icon: <MessageSquare strokeWidth={1.5} /> },
   { to: "/admin/forge", label: "Forge", icon: <Flame strokeWidth={1.5} /> },
   { to: "/admin/crucible", label: "Crucible", icon: <BookOpen strokeWidth={1.5} /> },
   { to: "/admin/knowledge-base", label: "Knowledge Base", icon: <Database strokeWidth={1.5} /> },
