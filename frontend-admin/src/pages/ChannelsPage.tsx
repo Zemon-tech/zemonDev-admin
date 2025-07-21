@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useApi } from '../lib/api';
 import ChannelTable from '../components/channels/ChannelTable';
+import FullScreenModal from '../components/common/FullScreenModal';
+import AddChannelForm from '../components/channels/AddChannelForm';
 
 // Channel type based on backend model
 interface Channel {
   _id: string;
   name: string;
-  type: 'text' | 'announcement' | 'readonly';
+  type: 'chat' | 'announcement' | 'showcase';
   group: 'getting-started' | 'community' | 'hackathons';
   description?: string;
   isActive: boolean;
@@ -38,6 +40,7 @@ const ChannelsPage: React.FC = () => {
   const [grouped, setGrouped] = useState<GroupedChannels>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAddModalOpen, setAddModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchChannels = async () => {
@@ -89,6 +92,12 @@ const ChannelsPage: React.FC = () => {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Channels</h1>
+      <div className="mb-4 flex justify-end">
+        <button className="btn btn-primary" onClick={() => setAddModalOpen(true)}>Add Channel</button>
+      </div>
+      <FullScreenModal isOpen={isAddModalOpen} onClose={() => setAddModalOpen(false)} title="Add Channel">
+        <AddChannelForm onClose={() => setAddModalOpen(false)} />
+      </FullScreenModal>
       <ChannelTable title={groupNames['getting-started']} channels={grouped['getting-started'] || []} />
       <ChannelTable title={groupNames['community']} channels={grouped['community'] || []} />
       <ChannelTable title={groupNames['hackathons']} channels={grouped['hackathons'] || []} />

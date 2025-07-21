@@ -3,7 +3,7 @@ import React from 'react';
 interface Channel {
   _id: string;
   name: string;
-  type: 'text' | 'announcement' | 'readonly';
+  type: 'chat' | 'announcement' | 'showcase';
   isActive: boolean;
   permissions: {
     canMessage: boolean;

@@ -8,6 +8,42 @@ import mongoose from 'mongoose';
 // @access  Private/Admin
 export const getUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const { role } = req.query;
+    if (role) {
+      // Find all userIds with the given role
+      const userRoles = await UserRole.find({ role }).select('userId');
+      const userIds = userRoles.map((ur) => ur.userId);
+      const users = await User.aggregate([
+        { $match: { _id: { $in: userIds } } },
+        {
+          $lookup: {
+            from: 'userroles',
+            localField: '_id',
+            foreignField: 'userId',
+            as: 'roleInfo',
+          },
+        },
+        {
+          $unwind: {
+            path: '$roleInfo',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $addFields: {
+            role: { $ifNull: ['$roleInfo.role', 'user'] },
+          },
+        },
+        {
+          $project: {
+            roleInfo: 0,
+          },
+        },
+      ]);
+      res.json(users);
+      return;
+    }
+    // Default: return all users as before
     const users = await User.aggregate([
       {
         $lookup: {
@@ -116,6 +152,26 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
     } else {
       res.status(404).json({ message: 'User not found' });
     }
+  } catch (error) {
+    next(error);
+  }
+}; 
+
+// @desc    Get current user (by Clerk session)
+// @route   GET /api/users/me
+// @access  Private/Admin
+export const getCurrentUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    if (!req.user || !req.user._id) {
+      res.status(401).json({ message: 'Not authorized' });
+      return;
+    }
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+    res.json(user);
   } catch (error) {
     next(error);
   }

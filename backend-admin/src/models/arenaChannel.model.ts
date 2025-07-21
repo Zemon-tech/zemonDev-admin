@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IArenaChannel extends Document {
   name: string;
-  type: 'text' | 'announcement' | 'readonly';
+  type: 'chat' | 'announcement' | 'showcase';
   group: 'getting-started' | 'community' | 'hackathons';
   description?: string;
   isActive: boolean;
@@ -27,8 +27,8 @@ const ArenaChannelSchema: Schema = new Schema(
     type: {
       type: String,
       required: true,
-      enum: ['text', 'announcement', 'readonly'],
-      default: 'text',
+      enum: ['chat', 'announcement', 'showcase'],
+      default: 'chat',
     },
     group: {
       type: String,
