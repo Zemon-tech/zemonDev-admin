@@ -2,17 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApi } from '../lib/api';
 
-interface IUser {
-    _id: string;
-    fullName: string;
-    email: string;
-    role: 'admin' | 'user';
-}
-
 const UserEditPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const [user, setUser] = useState<IUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const apiFetch = useApi();
@@ -25,7 +17,6 @@ const UserEditPage: React.FC = () => {
         const fetchUser = async () => {
             try {
                 const data = await apiFetch(`/users/${id}`);
-                setUser(data);
                 setFullName(data.fullName);
                 setEmail(data.email);
                 setRole(data.role);
