@@ -14,6 +14,7 @@ import KnowledgeBasePage from './pages/KnowledgeBasePage';
 import KnowledgeBaseNewPage from './pages/KnowledgeBaseNewPage';
 import KnowledgeBaseEditPage from './pages/KnowledgeBaseEditPage';
 import ChannelsPage from './pages/ChannelsPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
                     <Route path="/admin/knowledge-base/new" element={<KnowledgeBaseNewPage />} />
                     <Route path="/admin/knowledge-base/edit/:id" element={<KnowledgeBaseEditPage />} />
                     <Route path="/admin/channels" element={<ChannelsPage />} />
+                    <Route path="/admin/notifications" element={<NotificationsPage />} />
                     <Route path="/" element={<Navigate to="/admin/dashboard" />} />
                   </Route>
                 </Routes>

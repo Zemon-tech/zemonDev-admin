@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import ForgeResource from '../models/forgeResource.model';
+import { NotificationTriggers } from '../services/notificationTriggers.service';
 
 // @desc    Get all resources
 // @route   GET /api/forge
@@ -47,6 +48,10 @@ export const createResource = async (req: Request, res: Response, next: NextFunc
             createdBy: req.user?._id, // Comes from protect middleware
         });
         const createdResource = await resource.save();
+        
+        // Trigger notification for new resource
+        await NotificationTriggers.onForgeResourceCreated(createdResource);
+        
         res.status(201).json(createdResource);
     } catch (error) {
         next(error);

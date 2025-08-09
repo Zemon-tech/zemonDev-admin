@@ -120,7 +120,7 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
             await UserRole.create({
                 userId: user._id,
                 role: req.body.role,
-                grantedBy: new mongoose.Types.ObjectId(req.auth.userId), 
+                grantedBy: req.user._id, 
             });
         }
       }

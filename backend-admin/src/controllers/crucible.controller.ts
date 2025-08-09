@@ -9,6 +9,7 @@ import WorkspaceState from '../models/workspaceState.model';
 import CrucibleDiagram from '../models/crucibleDiagram.model';
 import ProgressTracking from '../models/progressTracking.model';
 import ResearchItem from '../models/researchItem.model';
+import { NotificationTriggers } from '../services/notificationTriggers.service';
 
 // @desc    Get all problems
 // @route   GET /api/crucible
@@ -79,9 +80,13 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
             resources,
             aiHints,
             status,
-            createdBy: new mongoose.Types.ObjectId(req.auth.userId),
+            createdBy: req.user._id,
         });
         const createdProblem = await problem.save();
+        
+        // Trigger notification for new problem
+        await NotificationTriggers.onProblemCreated(createdProblem);
+        
         res.status(201).json(createdProblem);
     } catch (error) {
         next(error);
@@ -215,7 +220,7 @@ export const updateSolution = async (req: Request, res: Response, next: NextFunc
         
         if (review) {
             solution.reviews.push({
-                userId: new mongoose.Types.ObjectId(req.auth.userId),
+                userId: req.user._id,
                 rating: review.rating,
                 comment: review.comment,
                 reviewedAt: new Date(),

@@ -7,6 +7,7 @@ import forgeRoutes from './api/forge.routes';
 import crucibleRoutes from './api/crucible.routes';
 import knowledgeBaseRoutes from './api/knowledgeBase.routes';
 import arenaChannelRoutes from './api/arenaChannel.routes';
+import notificationRoutes from './api/notification.routes';
 import errorHandler from './middleware/error.middleware';
 
 // Import all models to ensure they are registered with Mongoose
@@ -21,6 +22,7 @@ import './models/crucibleDiagram.model';
 import './models/progressTracking.model';
 import './models/researchItem.model';
 import './models/knowledgeBaseDocument.model';
+import './models/notification.model';
 
 dotenv.config();
 
@@ -38,6 +40,7 @@ app.use('/api/forge', forgeRoutes);
 app.use('/api/crucible', crucibleRoutes);
 app.use('/api/admin/knowledge-base/documents', knowledgeBaseRoutes);
 app.use('/api', arenaChannelRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 const PORT = process.env.PORT || 5001;
 
