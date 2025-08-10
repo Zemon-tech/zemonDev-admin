@@ -51,6 +51,7 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
         const { 
             title, 
             description, 
+            category,
             difficulty, 
             tags, 
             requirements, 
@@ -68,6 +69,7 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
         const problem = new CrucibleProblem({
             title,
             description,
+            category,
             difficulty,
             tags,
             requirements,
@@ -101,6 +103,7 @@ export const updateProblem = async (req: Request, res: Response, next: NextFunct
         const { 
             title, 
             description, 
+            category,
             difficulty, 
             tags, 
             requirements, 
@@ -119,6 +122,7 @@ export const updateProblem = async (req: Request, res: Response, next: NextFunct
         if (problem) {
             problem.title = title || problem.title;
             problem.description = description || problem.description;
+            problem.category = category || problem.category;
             problem.difficulty = difficulty || problem.difficulty;
             problem.tags = tags || problem.tags;
             problem.requirements = requirements || problem.requirements;

@@ -6,6 +6,7 @@ import { Save, ArrowLeft, ArrowRight, Plus, X, Tag, Book, Target, Link2, Message
 export interface ICrucibleProblemData {
     title: string;
     description: string;
+    category: 'algorithms' | 'system-design' | 'web-development' | 'mobile-development' | 'data-science' | 'devops' | 'frontend' | 'backend';
     difficulty: 'easy' | 'medium' | 'hard' | 'expert';
     tags: string[];
     requirements: {
@@ -36,6 +37,7 @@ const CrucibleCreatePage: React.FC = () => {
     const [formData, setFormData] = useState<ICrucibleProblemData>({
         title: '',
         description: '',
+        category: 'algorithms',
         difficulty: 'medium',
         tags: [],
         requirements: { functional: [], nonFunctional: [] },
@@ -234,8 +236,8 @@ const CrucibleCreatePage: React.FC = () => {
                 <form onSubmit={handleSubmit} className="p-4">
                     {/* Basic Info Tab */}
                     <div className={`space-y-4 ${activeTab !== 'basic' ? 'hidden' : ''}`}>
-                        {/* Title & Difficulty */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Title, Category & Difficulty */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="form-control">
                                 <label className="label pb-1 flex items-center gap-2">
                                     <FileText size={14} className="text-primary" />
@@ -253,6 +255,33 @@ const CrucibleCreatePage: React.FC = () => {
                                 />
                                 <label className="label pt-1">
                                     <span className="label-text-alt text-base-content/70">A clear, concise title for the problem</span>
+                                </label>
+                            </div>
+                            
+                            <div className="form-control">
+                                <label className="label pb-1 flex items-center gap-2">
+                                    <Tag size={14} className="text-primary" />
+                                    <span className="label-text font-medium">Category</span>
+                                    <span className="badge badge-xs badge-error">Required</span>
+                                </label>
+                                <select 
+                                    name="category" 
+                                    value={formData.category} 
+                                    onChange={handleChange} 
+                                    className="select select-bordered focus:border-primary focus:ring-1 focus:ring-primary transition-all w-full" 
+                                    required
+                                >
+                                    <option value="algorithms">Algorithms & Data Structures</option>
+                                    <option value="system-design">System Architecture & Design</option>
+                                    <option value="web-development">Full-Stack Web Development</option>
+                                    <option value="mobile-development">Mobile App Development</option>
+                                    <option value="data-science">Machine Learning & Data Science</option>
+                                    <option value="devops">DevOps & Infrastructure</option>
+                                    <option value="frontend">Frontend Development</option>
+                                    <option value="backend">Backend & API Development</option>
+                                </select>
+                                <label className="label pt-1">
+                                    <span className="label-text-alt text-base-content/70">Select the problem category</span>
                                 </label>
                             </div>
                             

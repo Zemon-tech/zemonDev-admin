@@ -6,6 +6,7 @@ import { useApi } from '../lib/api';
 interface ICrucibleProblem {
     _id: string;
     title: string;
+    category: 'algorithms' | 'system-design' | 'web-development' | 'mobile-development' | 'data-science' | 'devops' | 'frontend' | 'backend';
     difficulty: string;
     tags: string[];
     status: 'draft' | 'published' | 'archived';
@@ -20,6 +21,7 @@ const CrucibleListPage: React.FC = () => {
     const [problemToDelete, setProblemToDelete] = useState<ICrucibleProblem | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterDifficulty, setFilterDifficulty] = useState('all');
+    const [filterCategory, setFilterCategory] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
     const apiFetch = useApi();
 
@@ -52,9 +54,10 @@ const CrucibleListPage: React.FC = () => {
         const matchesSearch = problem.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                              problem.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
         const matchesDifficulty = filterDifficulty === 'all' || problem.difficulty === filterDifficulty;
+        const matchesCategory = filterCategory === 'all' || problem.category === filterCategory;
         const matchesStatus = filterStatus === 'all' || problem.status === filterStatus;
         
-        return matchesSearch && matchesDifficulty && matchesStatus;
+        return matchesSearch && matchesDifficulty && matchesCategory && matchesStatus;
     });
 
     const getStatusBadgeClass = (status: string) => {
@@ -73,6 +76,34 @@ const CrucibleListPage: React.FC = () => {
             case 'hard': return 'badge-error';
             case 'expert': return 'badge-error text-white';
             default: return 'badge-outline';
+        }
+    };
+
+    const getCategoryBadgeClass = (category: string) => {
+        switch (category) {
+            case 'algorithms': return 'badge-primary';
+            case 'system-design': return 'badge-secondary';
+            case 'web-development': return 'badge-accent';
+            case 'mobile-development': return 'badge-info';
+            case 'data-science': return 'badge-success';
+            case 'devops': return 'badge-warning';
+            case 'frontend': return 'badge-error';
+            case 'backend': return 'badge-neutral';
+            default: return 'badge-outline';
+        }
+    };
+
+    const getCategoryDisplayName = (category: string) => {
+        switch (category) {
+            case 'algorithms': return 'Algorithms';
+            case 'system-design': return 'System Design';
+            case 'web-development': return 'Web Development';
+            case 'mobile-development': return 'Mobile Development';
+            case 'data-science': return 'Data Science';
+            case 'devops': return 'DevOps';
+            case 'frontend': return 'Frontend';
+            case 'backend': return 'Backend';
+            default: return category;
         }
     };
 
@@ -124,6 +155,26 @@ const CrucibleListPage: React.FC = () => {
                     </div>
                     <div className="form-control">
                         <label className="label">
+                            <span className="label-text">Category</span>
+                        </label>
+                        <select 
+                            className="select select-bordered" 
+                            value={filterCategory}
+                            onChange={(e) => setFilterCategory(e.target.value)}
+                        >
+                            <option value="all">All Categories</option>
+                            <option value="algorithms">Algorithms</option>
+                            <option value="system-design">System Design</option>
+                            <option value="web-development">Web Development</option>
+                            <option value="mobile-development">Mobile Development</option>
+                            <option value="data-science">Data Science</option>
+                            <option value="devops">DevOps</option>
+                            <option value="frontend">Frontend</option>
+                            <option value="backend">Backend</option>
+                        </select>
+                    </div>
+                    <div className="form-control">
+                        <label className="label">
                             <span className="label-text">Status</span>
                         </label>
                         <select 
@@ -145,6 +196,7 @@ const CrucibleListPage: React.FC = () => {
                     <thead>
                         <tr>
                             <th>Title</th>
+                            <th>Category</th>
                             <th>Status</th>
                             <th>Difficulty</th>
                             <th>Tags</th>
@@ -154,7 +206,7 @@ const CrucibleListPage: React.FC = () => {
                     <tbody>
                         {filteredProblems?.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="text-center py-8 text-gray-500">
+                                <td colSpan={6} className="text-center py-8 text-gray-500">
                                     No problems found matching your filters
                                 </td>
                             </tr>
@@ -162,6 +214,11 @@ const CrucibleListPage: React.FC = () => {
                             filteredProblems?.map((problem: ICrucibleProblem) => (
                                 <tr key={problem._id}>
                                     <td className="font-medium">{problem.title}</td>
+                                    <td>
+                                        <span className={`badge ${getCategoryBadgeClass(problem.category)}`}>
+                                            {getCategoryDisplayName(problem.category)}
+                                        </span>
+                                    </td>
                                     <td>
                                         <span className={`badge ${getStatusBadgeClass(problem.status)}`}>
                                             {problem.status}

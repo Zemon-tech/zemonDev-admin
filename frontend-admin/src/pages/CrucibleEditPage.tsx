@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, ArrowRight, X, MessageSquare, FileText, Layers, Sparkles, Book, CheckCircle2, Target } from 'lucide-react';
+import { Save, ArrowLeft, ArrowRight, X, MessageSquare, FileText, Layers, Sparkles, Book, CheckCircle2, Target, Tag } from 'lucide-react';
 import { useApi } from '../lib/api';
 import type { ICrucibleProblemData } from './CrucibleCreatePage';
 
@@ -14,6 +14,7 @@ const CrucibleEditPage: React.FC = () => {
     const [formData, setFormData] = useState<ICrucibleProblemData>({
         title: '',
         description: '',
+        category: 'algorithms',
         difficulty: 'medium',
         tags: [],
         requirements: { functional: [], nonFunctional: [] },
@@ -252,7 +253,7 @@ const CrucibleEditPage: React.FC = () => {
                 <form onSubmit={handleSubmit} className="p-4">
                     {/* Basic Info Tab */}
                     <div className={`space-y-4 ${activeTab !== 'basic' ? 'hidden' : ''}`}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="form-control">
                                 <label className="label pb-1 flex items-center gap-2">
                                     <FileText size={14} className="text-primary" />
@@ -268,6 +269,30 @@ const CrucibleEditPage: React.FC = () => {
                                     placeholder="Enter a descriptive title"
                                     required 
                                 />
+                            </div>
+
+                            <div className="form-control">
+                                <label className="label pb-1 flex items-center gap-2">
+                                    <Tag size={14} className="text-primary" />
+                                    <span className="label-text font-medium">Category</span>
+                                    <span className="badge badge-xs badge-error">Required</span>
+                                </label>
+                                <select 
+                                    name="category" 
+                                    value={formData.category} 
+                                    onChange={handleChange} 
+                                    className="select select-bordered focus:border-primary focus:ring-1 focus:ring-primary transition-all w-full" 
+                                    required
+                                >
+                                    <option value="algorithms">Algorithms & Data Structures</option>
+                                    <option value="system-design">System Architecture & Design</option>
+                                    <option value="web-development">Full-Stack Web Development</option>
+                                    <option value="mobile-development">Mobile App Development</option>
+                                    <option value="data-science">Machine Learning & Data Science</option>
+                                    <option value="devops">DevOps & Infrastructure</option>
+                                    <option value="frontend">Frontend Development</option>
+                                    <option value="backend">Backend & API Development</option>
+                                </select>
                             </div>
 
                             <div className="form-control">
