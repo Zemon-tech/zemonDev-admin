@@ -6,11 +6,14 @@ export interface INotification extends Document {
   priority: 'low' | 'medium' | 'high' | 'urgent';
   title: string;
   message: string;
+  data?: {
+    entityId?: string;
+    entityType?: string;
+    action?: string;
+    metadata?: any;
+  };
   isRead: boolean;
   isArchived: boolean;
-  metadata?: {
-    [key: string]: any;
-  };
   expiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -46,6 +49,23 @@ const NotificationSchema: Schema = new Schema(
       required: true,
       trim: true,
     },
+    data: {
+      entityId: {
+        type: String,
+        trim: true,
+      },
+      entityType: {
+        type: String,
+        trim: true,
+      },
+      action: {
+        type: String,
+        trim: true,
+      },
+      metadata: {
+        type: Schema.Types.Mixed,
+      },
+    },
     isRead: {
       type: Boolean,
       default: false,
@@ -56,31 +76,21 @@ const NotificationSchema: Schema = new Schema(
       default: false,
       index: true,
     },
-    metadata: {
-      type: Schema.Types.Mixed,
-      default: {},
-    },
     expiresAt: {
       type: Date,
-      index: { expireAfterSeconds: 0 }, // TTL index for automatic cleanup
+      index: true,
     },
   },
   { 
     timestamps: true,
-    indexes: [
-      { userId: 1, createdAt: -1 },
-      { userId: 1, isRead: 1 },
-      { userId: 1, type: 1 },
-      { userId: 1, priority: 1 },
-      { type: 1, createdAt: -1 },
-      { priority: 1, createdAt: -1 },
-    ]
   }
 );
 
-// Compound index for efficient queries
+// Common query indexes
 NotificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
 NotificationSchema.index({ userId: 1, type: 1, createdAt: -1 });
+// TTL: auto-delete notifications 30 days after creation
+NotificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });
 
 export default mongoose.model<INotification>('Notification', NotificationSchema);
 

@@ -9,7 +9,12 @@ export interface Notification {
   message: string;
   isRead: boolean;
   isArchived: boolean;
-  metadata?: any;
+  data?: {
+    entityId?: string;
+    entityType?: string;
+    action?: string;
+    metadata?: any;
+  };
   expiresAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -37,7 +42,12 @@ export interface CreateNotificationData {
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   title: string;
   message: string;
-  metadata?: any;
+  data?: {
+    entityId?: string;
+    entityType?: string;
+    action?: string;
+    metadata?: any;
+  };
   expiresAt?: string;
 }
 
@@ -46,7 +56,12 @@ export interface BulkNotificationData {
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   title: string;
   message: string;
-  metadata?: any;
+  data?: {
+    entityId?: string;
+    entityType?: string;
+    action?: string;
+    metadata?: any;
+  };
   expiresAt?: string;
   excludeUserIds?: string[];
 }

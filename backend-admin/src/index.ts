@@ -48,7 +48,7 @@ app.get('/', (req, res) => {
     res.send('Admin Backend is running...');
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`Server is running on port ${PORT}`);
 });
 

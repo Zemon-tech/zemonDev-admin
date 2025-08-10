@@ -149,7 +149,7 @@ export const createCustomNotification = asyncHandler(async (req: Request, res: R
     return next(new AppError('User not authenticated', 401));
   }
 
-  const { userId, type, priority, title, message, metadata, expiresAt } = req.body;
+  const { userId, type, priority, title, message, data, expiresAt } = req.body;
 
   if (!userId || !type || !title || !message) {
     return next(new AppError('Missing required fields', 400));
@@ -165,7 +165,7 @@ export const createCustomNotification = asyncHandler(async (req: Request, res: R
     priority: priority || 'medium',
     title,
     message,
-    metadata: metadata || {},
+    data: data || {},
     expiresAt: expiresAt ? new Date(expiresAt) : undefined,
   };
 
@@ -185,7 +185,7 @@ export const createBulkNotifications = asyncHandler(async (req: Request, res: Re
     return next(new AppError('User not authenticated', 401));
   }
 
-  const { type, priority, title, message, metadata, expiresAt, excludeUserIds } = req.body;
+  const { type, priority, title, message, data, expiresAt, excludeUserIds } = req.body;
 
   if (!type || !title || !message) {
     return next(new AppError('Missing required fields', 400));
@@ -196,7 +196,7 @@ export const createBulkNotifications = asyncHandler(async (req: Request, res: Re
     priority: priority || 'medium',
     title,
     message,
-    metadata: metadata || {},
+    data: data || {},
     expiresAt: expiresAt ? new Date(expiresAt) : undefined,
     excludeUserIds: excludeUserIds ? excludeUserIds.map((id: string) => new mongoose.Types.ObjectId(id)) : undefined,
   };

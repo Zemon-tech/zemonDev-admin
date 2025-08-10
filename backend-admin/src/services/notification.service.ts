@@ -9,7 +9,12 @@ export interface CreateNotificationData {
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   title: string;
   message: string;
-  metadata?: any;
+  data?: {
+    entityId?: string;
+    entityType?: string;
+    action?: string;
+    metadata?: any;
+  };
   expiresAt?: Date;
 }
 
@@ -18,7 +23,12 @@ export interface BulkNotificationData {
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   title: string;
   message: string;
-  metadata?: any;
+  data?: {
+    entityId?: string;
+    entityType?: string;
+    action?: string;
+    metadata?: any;
+  };
   expiresAt?: Date;
   excludeUserIds?: mongoose.Types.ObjectId[];
 }
@@ -49,7 +59,7 @@ export class NotificationService {
         priority: data.priority || 'medium',
         title: data.title,
         message: data.message,
-        metadata: data.metadata || {},
+        data: data.data || {},
         expiresAt: data.expiresAt,
       });
 
@@ -82,7 +92,7 @@ export class NotificationService {
         priority: data.priority || 'medium',
         title: data.title,
         message: data.message,
-        metadata: data.metadata || {},
+        data: data.data || {},
         expiresAt: data.expiresAt,
       }));
 

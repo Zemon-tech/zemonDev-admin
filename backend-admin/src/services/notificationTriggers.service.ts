@@ -13,10 +13,15 @@ export class NotificationTriggers {
         priority: 'medium',
         title: 'New Tool Available! 🛠️',
         message: `A new ${resourceData.type} resource "${resourceData.title}" has been added to the Forge.`,
-        metadata: {
-          resourceId: resourceData._id,
-          resourceType: resourceData.type,
-          resourceTitle: resourceData.title,
+        data: {
+          entityId: resourceData._id.toString(),
+          entityType: 'resource',
+          action: 'created',
+          metadata: {
+            resourceId: resourceData._id,
+            resourceType: resourceData.type,
+            resourceTitle: resourceData.title,
+          },
         },
       });
     } catch (error) {
@@ -34,9 +39,14 @@ export class NotificationTriggers {
         priority: 'high',
         title: 'New Hackathon Available! 🚀',
         message: `A new hackathon "${hackathonData.title}" has been announced.`,
-        metadata: {
-          hackathonId: hackathonData._id,
-          hackathonTitle: hackathonData.title,
+        data: {
+          entityId: hackathonData._id.toString(),
+          entityType: 'hackathon',
+          action: 'created',
+          metadata: {
+            hackathonId: hackathonData._id,
+            hackathonTitle: hackathonData.title,
+          },
         },
       });
     } catch (error) {
@@ -54,9 +64,14 @@ export class NotificationTriggers {
         priority: 'medium',
         title: 'Latest News Update! 📰',
         message: `New news: "${newsData.title}"`,
-        metadata: {
-          newsId: newsData._id,
-          newsTitle: newsData.title,
+        data: {
+          entityId: newsData._id.toString(),
+          entityType: 'news',
+          action: 'created',
+          metadata: {
+            newsId: newsData._id,
+            newsTitle: newsData.title,
+          },
         },
       });
     } catch (error) {
@@ -75,9 +90,14 @@ export class NotificationTriggers {
         priority: 'high',
         title: 'Project Approved! 🎉',
         message: `Your project "${projectData.title}" has been approved by the admin.`,
-        metadata: {
-          projectId: projectData._id,
-          projectTitle: projectData.title,
+        data: {
+          entityId: projectData._id.toString(),
+          entityType: 'project',
+          action: 'approved',
+          metadata: {
+            projectId: projectData._id,
+            projectTitle: projectData.title,
+          },
         },
       });
     } catch (error) {
@@ -95,9 +115,14 @@ export class NotificationTriggers {
         priority: 'medium',
         title: 'New Channel Created! 💬',
         message: `A new channel "${channelData.name}" has been created.`,
-        metadata: {
-          channelId: channelData._id,
-          channelName: channelData.name,
+        data: {
+          entityId: channelData._id.toString(),
+          entityType: 'channel',
+          action: 'created',
+          metadata: {
+            channelId: channelData._id,
+            channelName: channelData.name,
+          },
         },
       });
     } catch (error) {
@@ -115,10 +140,15 @@ export class NotificationTriggers {
         priority: 'high',
         title: 'New Problem Available! 🧩',
         message: `A new problem "${problemData.title}" has been added to the Crucible.`,
-        metadata: {
-          problemId: problemData._id,
-          problemTitle: problemData.title,
-          difficulty: problemData.difficulty,
+        data: {
+          entityId: problemData._id.toString(),
+          entityType: 'problem',
+          action: 'created',
+          metadata: {
+            problemId: problemData._id,
+            problemTitle: problemData.title,
+            difficulty: problemData.difficulty,
+          },
         },
       });
     } catch (error) {
@@ -156,7 +186,7 @@ export class NotificationTriggers {
     title: string,
     message: string,
     priority: 'low' | 'medium' | 'high' | 'urgent' = 'medium',
-    metadata?: any
+    data?: any
   ): Promise<void> {
     try {
       await NotificationService.createNotification({
@@ -165,7 +195,7 @@ export class NotificationTriggers {
         priority,
         title,
         message,
-        metadata,
+        data,
       });
     } catch (error) {
       console.error('Failed to send custom notification:', error);
@@ -183,9 +213,14 @@ export class NotificationTriggers {
         priority: 'medium',
         title: 'Welcome to Zemon! 🎉',
         message: `Welcome ${userData.fullName}! We're excited to have you join our community.`,
-        metadata: {
-          welcomeMessage: true,
-          userEmail: userData.email,
+        data: {
+          entityId: userId.toString(),
+          entityType: 'user',
+          action: 'registered',
+          metadata: {
+            welcomeMessage: true,
+            userEmail: userData.email,
+          },
         },
       });
     } catch (error) {
@@ -219,9 +254,14 @@ export class NotificationTriggers {
         priority: 'high',
         title,
         message,
-        metadata: {
-          achievementType,
-          achievementData,
+        data: {
+          entityId: userId.toString(),
+          entityType: 'achievement',
+          action: 'unlocked',
+          metadata: {
+            achievementType,
+            achievementData,
+          },
         },
       });
     } catch (error) {
