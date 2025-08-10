@@ -82,7 +82,7 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
             resources,
             aiHints,
             status,
-            createdBy: req.user._id,
+            createdBy: new mongoose.Types.ObjectId(req.auth.userId),
         });
         const createdProblem = await problem.save();
         
@@ -224,7 +224,7 @@ export const updateSolution = async (req: Request, res: Response, next: NextFunc
         
         if (review) {
             solution.reviews.push({
-                userId: req.user._id,
+                userId: new mongoose.Types.ObjectId(req.auth.userId),
                 rating: review.rating,
                 comment: review.comment,
                 reviewedAt: new Date(),

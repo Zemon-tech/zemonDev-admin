@@ -56,6 +56,7 @@ const CrucibleCreatePage: React.FC = () => {
     const [newResource, setNewResource] = useState<{ title: string; url: string; type: 'article' | 'video' | 'documentation' | 'tool' | 'other' }>({ title: '', url: '', type: 'article' });
     const [newAiHint, setNewAiHint] = useState({ trigger: '', content: '' });
     const [tagInput, setTagInput] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -126,14 +127,40 @@ const CrucibleCreatePage: React.FC = () => {
     
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log('Form submitted with data:', formData);
+        
+        // Basic validation
+        if (!formData.title.trim()) {
+            alert('Please enter a title for the problem');
+            return;
+        }
+        if (!formData.description.trim()) {
+            alert('Please enter a description for the problem');
+            return;
+        }
+        if (!formData.category) {
+            alert('Please select a category for the problem');
+            return;
+        }
+        if (!formData.difficulty) {
+            alert('Please select a difficulty level');
+            return;
+        }
+        
+        setIsSubmitting(true);
         try {
-            await apiFetch('/crucible/problems', {
+            const response = await apiFetch('/crucible/problems', {
                 method: 'POST',
                 body: JSON.stringify(formData),
             });
+            console.log('Success response:', response);
             navigate('/admin/crucible');
         } catch (err) {
             console.error('Failed to create problem', err);
+            // Show error to user
+            alert(`Failed to create problem: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -922,8 +949,21 @@ Example:
                             )}
                         </div>
                         
-                        <button type="submit" className="btn btn-primary gap-2">
-                            <Save size={16} /> Create Problem
+                        <button 
+                            type="submit" 
+                            className="btn btn-primary gap-2" 
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <span className="loading loading-spinner loading-sm"></span>
+                                    Creating...
+                                </>
+                            ) : (
+                                <>
+                                    <Save size={16} /> Create Problem
+                                </>
+                            )}
                         </button>
                     </div>
                 </form>

@@ -43,6 +43,7 @@ const CrucibleEditPage: React.FC = () => {
     const [tagInput, setTagInput] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
     const tabs = [
         { id: 'basic', label: 'Basic Info', icon: <FileText size={16} /> },
@@ -152,17 +153,57 @@ const CrucibleEditPage: React.FC = () => {
     
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log('Edit form submitted with data:', formData);
+        console.log('Updating problem with ID:', id);
+        
+        // Basic validation
+        if (!formData.title.trim()) {
+            setSaveError('Please enter a title for the problem');
+            return;
+        }
+        if (!formData.description.trim()) {
+            setSaveError('Please enter a description for the problem');
+            return;
+        }
+        if (!formData.category) {
+            setSaveError('Please select a category for the problem');
+            return;
+        }
+        if (!formData.difficulty) {
+            setSaveError('Please select a difficulty level');
+            return;
+        }
+        
         setIsSaving(true);
         setSaveError(null);
         try {
-            await apiFetch(`/crucible/problems/${id}`, {
+            console.log('Sending PUT request to:', `/crucible/problems/${id}`);
+            console.log('Request body:', formData);
+            
+            const response = await apiFetch(`/crucible/problems/${id}`, {
                 method: 'PUT',
                 body: JSON.stringify(formData),
             });
-            navigate('/admin/crucible');
+            console.log('Update success response:', response);
+            console.log('Response type:', typeof response);
+            console.log('Navigating to /admin/crucible...');
+            setSaveError(null);
+            setSaveSuccess(true);
+            // Show success message briefly before navigating
+            setTimeout(() => {
+                navigate('/admin/crucible');
+            }, 500);
+            
+            // Fallback navigation in case setTimeout fails
+            setTimeout(() => {
+                if (window.location.pathname.includes('/edit')) {
+                    console.log('Fallback navigation triggered');
+                    navigate('/admin/crucible');
+                }
+            }, 2000);
         } catch (err) {
             console.error('Failed to update problem', err);
-            setSaveError('Failed to save changes. Please try again.');
+            setSaveError(`Failed to save changes: ${err instanceof Error ? err.message : 'Unknown error'}`);
         } finally {
             setIsSaving(false);
         }
@@ -186,7 +227,10 @@ const CrucibleEditPage: React.FC = () => {
                         </div>
                     </div>
                     <button 
-                        onClick={() => navigate('/admin/crucible')} 
+                        onClick={() => {
+                            console.log('Cancel button clicked, navigating to /admin/crucible');
+                            navigate('/admin/crucible');
+                        }} 
                         className="btn btn-outline btn-sm"
                     >
                         Cancel
@@ -745,6 +789,13 @@ const CrucibleEditPage: React.FC = () => {
                     {saveError && (
                         <div className="alert alert-error mt-4">
                             {saveError}
+                        </div>
+                    )}
+                    
+                    {saveSuccess && (
+                        <div className="alert alert-success mt-4">
+                            <CheckCircle2 size={16} />
+                            Problem updated successfully! Redirecting...
                         </div>
                     )}
                 </form>
