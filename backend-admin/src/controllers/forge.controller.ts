@@ -35,13 +35,14 @@ export const getResourceById = async (req: Request, res: Response, next: NextFun
 // @access  Private/Admin
 export const createResource = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const { title, type, url, description, content, tags, difficulty, isExternal } = req.body;
+        const { title, type, url, description, content, contentType, tags, difficulty, isExternal } = req.body;
         const resource = new ForgeResource({
             title,
             type,
             url,
             description,
             content,
+            contentType: contentType || 'markdown',
             tags,
             difficulty,
             isExternal: typeof isExternal === 'boolean' ? isExternal : !!url,
@@ -63,7 +64,7 @@ export const createResource = async (req: Request, res: Response, next: NextFunc
 // @access  Private/Admin
 export const updateResource = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const { title, type, url, description, content, tags, difficulty, isExternal } = req.body;
+        const { title, type, url, description, content, contentType, tags, difficulty, isExternal } = req.body;
         const resource = await ForgeResource.findById(req.params.id);
         if (resource) {
             resource.title = title || resource.title;
@@ -71,6 +72,7 @@ export const updateResource = async (req: Request, res: Response, next: NextFunc
             resource.url = url || '';
             resource.description = description || resource.description;
             resource.content = content || '';
+            resource.contentType = contentType || resource.contentType || 'markdown';
             resource.tags = tags || resource.tags;
             resource.difficulty = difficulty || resource.difficulty;
             resource.isExternal = typeof isExternal === 'boolean' ? isExternal : !!url;

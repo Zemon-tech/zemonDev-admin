@@ -20,6 +20,7 @@ const ForgeEditPage: React.FC = () => {
         difficulty: 'intermediate',
         isExternal: true,
         content: '',
+        contentType: 'markdown',
     });
 
     useEffect(() => {
@@ -35,6 +36,7 @@ const ForgeEditPage: React.FC = () => {
                     difficulty: data.difficulty,
                     isExternal: typeof data.isExternal === 'boolean' ? data.isExternal : !!data.url,
                     content: data.content || '',
+                    contentType: data.contentType || 'markdown',
                 });
             } catch (err) {
                 setError('Failed to fetch resource');

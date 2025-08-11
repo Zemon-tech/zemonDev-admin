@@ -17,6 +17,7 @@ const ForgeCreatePage: React.FC = () => {
         difficulty: 'intermediate',
         isExternal: true,
         content: '',
+        contentType: 'markdown',
     });
 
     const handleSubmit = async (e: React.FormEvent) => {

@@ -13,6 +13,7 @@ export interface IForgeResource extends Document {
   url: string;
   description: string;
   content?: string;
+  contentType: 'markdown' | 'html';
   tags: string[];
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   createdBy: mongoose.Types.ObjectId;
@@ -52,6 +53,11 @@ const ForgeResourceSchema: Schema = new Schema(
     content: {
       type: String,
       trim: true,
+    },
+    contentType: {
+      type: String,
+      enum: ['markdown', 'html'],
+      default: 'markdown',
     },
     tags: {
       type: [String],
