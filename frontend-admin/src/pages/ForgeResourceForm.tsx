@@ -7,6 +7,7 @@ export interface IForgeResourceData {
     title: string;
     type: 'article' | 'video' | 'book' | 'course' | 'tool' | 'repository' | 'documentation';
     url?: string;
+    thumbnail?: string;
     description: string;
     tags: string[];
     difficulty: 'beginner' | 'intermediate' | 'advanced';
@@ -421,6 +422,40 @@ const ForgeResourceForm: React.FC<ForgeResourceFormProps> = ({ formData, setForm
                         </div>
                     )}
                     
+                    {/* Thumbnail URL */}
+                    <div className="form-control">
+                        <label className="label py-1">
+                            <span className="label-text text-xs font-medium flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21,15 16,10 5,21"></polyline>
+                                </svg>
+                                    Thumbnail URL
+                                </span>
+                            </label>
+                            <input 
+                                type="url" 
+                                name="thumbnail" 
+                                value={formData.thumbnail || ''} 
+                                onChange={handleChange} 
+                                className="input input-sm input-bordered w-full focus:border-primary focus:ring-1 focus:ring-primary" 
+                                placeholder="https://example.com/thumbnail.jpg" 
+                            />
+                            {formData.thumbnail && (
+                                <div className="mt-2">
+                                    <img 
+                                        src={formData.thumbnail} 
+                                        alt="Thumbnail preview" 
+                                        className="w-20 h-20 object-cover rounded border border-base-300"
+                                        onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    
                     {/* Description */}
                     <div className="form-control">
                         <label className="label py-1">
@@ -605,7 +640,22 @@ Content goes here...`
                     ) : (
                         <div className="bg-base-200/50 rounded-lg p-6 flex flex-col items-center justify-center min-h-[300px]">
                             {formData.url ? (
-                                renderUrlPreview()
+                                <div className="w-full">
+                                    {renderUrlPreview()}
+                                    {formData.thumbnail && (
+                                        <div className="mt-6 text-center">
+                                            <h4 className="text-sm font-medium mb-3">Thumbnail Preview</h4>
+                                            <img 
+                                                src={formData.thumbnail} 
+                                                alt="Thumbnail" 
+                                                className="mx-auto max-w-full max-h-48 object-contain rounded border border-base-300"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                             ) : (
                                 <div className="text-center text-base-content/70 p-8">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -613,6 +663,19 @@ Content goes here...`
                                         <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                                     </svg>
                                     <p className="mt-2 text-sm">Enter a URL above to see a preview</p>
+                                    {formData.thumbnail && (
+                                        <div className="mt-4">
+                                            <h4 className="text-sm font-medium mb-2">Thumbnail Preview</h4>
+                                            <img 
+                                                src={formData.thumbnail} 
+                                                alt="Thumbnail" 
+                                                className="mx-auto max-w-full max-h-32 object-contain rounded border border-base-300"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                }}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

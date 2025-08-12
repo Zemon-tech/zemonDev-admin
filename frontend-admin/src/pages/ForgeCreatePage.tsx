@@ -12,6 +12,7 @@ const ForgeCreatePage: React.FC = () => {
         title: '',
         type: 'article',
         url: '',
+        thumbnail: '',
         description: '',
         tags: [],
         difficulty: 'intermediate',

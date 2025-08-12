@@ -35,11 +35,12 @@ export const getResourceById = async (req: Request, res: Response, next: NextFun
 // @access  Private/Admin
 export const createResource = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const { title, type, url, description, content, contentType, tags, difficulty, isExternal } = req.body;
+        const { title, type, url, thumbnail, description, content, contentType, tags, difficulty, isExternal } = req.body;
         const resource = new ForgeResource({
             title,
             type,
             url,
+            thumbnail,
             description,
             content,
             contentType: contentType || 'markdown',
@@ -64,12 +65,13 @@ export const createResource = async (req: Request, res: Response, next: NextFunc
 // @access  Private/Admin
 export const updateResource = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const { title, type, url, description, content, contentType, tags, difficulty, isExternal } = req.body;
+        const { title, type, url, thumbnail, description, content, contentType, tags, difficulty, isExternal } = req.body;
         const resource = await ForgeResource.findById(req.params.id);
         if (resource) {
             resource.title = title || resource.title;
             resource.type = type || resource.type;
             resource.url = url || '';
+            resource.thumbnail = thumbnail || resource.thumbnail;
             resource.description = description || resource.description;
             resource.content = content || '';
             resource.contentType = contentType || resource.contentType || 'markdown';

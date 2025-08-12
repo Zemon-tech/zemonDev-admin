@@ -7,6 +7,8 @@ interface IForgeResource {
     _id: string;
     title: string;
     type: string;
+    url?: string;
+    thumbnail?: string;
     difficulty: string;
     metrics?: {
         views: number;
@@ -66,6 +68,7 @@ const ForgeListPage: React.FC = () => {
                         <tr>
                             <th>Title</th>
                             <th>Type</th>
+                            <th>Thumbnail</th>
                             <th>Difficulty</th>
                             <th>Views</th>
                             <th>Bookmarks</th>
@@ -78,6 +81,26 @@ const ForgeListPage: React.FC = () => {
                             <tr key={resource._id}>
                                 <td>{resource.title}</td>
                                 <td>{resource.type}</td>
+                                <td>
+                                    {resource.thumbnail ? (
+                                        <img 
+                                            src={resource.thumbnail} 
+                                            alt="Thumbnail" 
+                                            className="w-12 h-12 object-cover rounded border border-base-300"
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="w-12 h-12 bg-base-200 rounded border border-base-300 flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                                <polyline points="21,15 16,10 5,21"></polyline>
+                                            </svg>
+                                        </div>
+                                    )}
+                                </td>
                                 <td><span className="badge badge-outline">{resource.difficulty}</span></td>
                                 <td>{resource.metrics?.views ?? 0}</td>
                                 <td>{resource.metrics?.bookmarks ?? 0}</td>

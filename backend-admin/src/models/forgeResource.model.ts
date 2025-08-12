@@ -11,6 +11,7 @@ export interface IForgeResource extends Document {
   title: string;
   type: 'article' | 'video' | 'book' | 'course' | 'tool' | 'repository' | 'documentation';
   url: string;
+  thumbnail?: string;
   description: string;
   content?: string;
   contentType: 'markdown' | 'html';
@@ -44,6 +45,10 @@ const ForgeResourceSchema: Schema = new Schema(
       type: String,
       trim: true,
       // not required: internal resources may not have a URL
+    },
+    thumbnail: {
+      type: String,
+      trim: true,
     },
     description: {
       type: String,
