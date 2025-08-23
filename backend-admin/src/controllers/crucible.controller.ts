@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
+import User from '../models/user.model';
 import CrucibleProblem from '../models/crucibleProblem.model';
 import CrucibleSolution from '../models/crucibleSolution.model';
 import SolutionDraft from '../models/solutionDraft.model';
@@ -66,6 +67,13 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
             status
         } = req.body;
         
+        // Find the user by clerkId to get the MongoDB ObjectId
+        const user = await User.findOne({ clerkId: req.auth.userId });
+        if (!user) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+
         const problem = new CrucibleProblem({
             title,
             description,
@@ -82,7 +90,7 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
             resources,
             aiHints,
             status,
-            createdBy: new mongoose.Types.ObjectId(req.auth.userId),
+            createdBy: user._id,
         });
         const createdProblem = await problem.save();
         
@@ -224,7 +232,7 @@ export const updateSolution = async (req: Request, res: Response, next: NextFunc
         
         if (review) {
             solution.reviews.push({
-                userId: new mongoose.Types.ObjectId(req.auth.userId),
+                userId: req.user._id,
                 rating: review.rating,
                 comment: review.comment,
                 reviewedAt: new Date(),
