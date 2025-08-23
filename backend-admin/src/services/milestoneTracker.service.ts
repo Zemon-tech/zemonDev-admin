@@ -247,7 +247,7 @@ export class MilestoneTrackerService {
         reputation: user.stats.reputation,
         actualSolutions: totalSolutions,
         averageScore: Math.round(averageScore * 100) / 100,
-        currentStreak: await this.calculateUserStreak(user._id),
+        currentStreak: await this.calculateUserStreak(user._id.toString()),
       };
     } catch (error) {
       throw new AppError(`Failed to get user milestones: ${error.message}`, 500);
@@ -267,10 +267,10 @@ export class MilestoneTrackerService {
       const allMilestones = await Milestone.find({ isActive: true });
       const userMilestoneIds = user.milestones.map(m => m.toString());
       
-      const nextMilestones = allMilestones
+      const milestonePromises = allMilestones
         .filter(milestone => !userMilestoneIds.includes(milestone._id.toString()))
-        .map(milestone => {
-          const currentValue = this.getCurrentValueForMilestone(user, milestone);
+        .map(async milestone => {
+          const currentValue = await this.getCurrentValueForMilestone(user, milestone);
           const progress = Math.min((currentValue / milestone.requirement.value) * 100, 100);
           
           return {
@@ -284,11 +284,13 @@ export class MilestoneTrackerService {
             progress,
             points: milestone.points,
           };
-        })
+        });
+
+      const nextMilestones = await Promise.all(milestonePromises);
+      
+      return nextMilestones
         .sort((a, b) => a.progress - b.progress)
         .slice(0, 5);
-
-      return nextMilestones;
     } catch (error) {
       throw new AppError(`Failed to get next milestones: ${error.message}`, 500);
     }
@@ -315,10 +317,10 @@ export class MilestoneTrackerService {
         return user.stats.reputation;
         
       case 'streak':
-        return await this.calculateUserStreak(user._id);
+        return await this.calculateUserStreak(user._id.toString());
         
       case 'collaboration':
-        return await this.calculateCollaborationScore(user._id);
+        return await this.calculateCollaborationScore(user._id.toString());
         
       default:
         return 0;

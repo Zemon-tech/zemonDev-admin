@@ -24,6 +24,7 @@ export interface IUser extends Document {
   completedSolutions: mongoose.Types.ObjectId[];
   activeDrafts: mongoose.Types.ObjectId[];
   archivedDrafts: mongoose.Types.ObjectId[];
+  milestones: mongoose.Types.ObjectId[];
   workspacePreferences: {
     defaultEditorSettings: {
       fontSize: number;
@@ -129,6 +130,12 @@ const UserSchema: Schema = new Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'SolutionDraft',
+      },
+    ],
+    milestones: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Milestone',
       },
     ],
     workspacePreferences: {

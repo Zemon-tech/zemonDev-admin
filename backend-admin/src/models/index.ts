@@ -17,6 +17,7 @@ import ForgeResource, { IForgeResource } from './forgeResource.model';
 import CrucibleProblem, { ICrucibleProblem } from './crucibleProblem.model';
 import CrucibleSolution, { ICrucibleSolution } from './crucibleSolution.model';
 import WorkspaceState, { IWorkspaceState } from './workspaceState.model';
+import Milestone, { IMilestone } from './milestone.model';
 
 export {
   User,
@@ -58,4 +59,6 @@ export {
   ICrucibleSolution,
   WorkspaceState,
   IWorkspaceState,
+  Milestone,
+  IMilestone,
 }; 
