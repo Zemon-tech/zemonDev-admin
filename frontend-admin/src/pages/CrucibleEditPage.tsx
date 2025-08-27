@@ -581,7 +581,7 @@ const CrucibleEditPage: React.FC = () => {
                                 <span className="label-text font-medium">Learning Objectives</span>
                             </label>
                             <textarea 
-                                value={formData.learningObjectives.join('\n')} 
+                                value={(formData.learningObjectives || []).join('\n')} 
                                 onChange={e => handleListChange('learningObjectives', e.target.value.split('\n').join(','))} 
                                 className="textarea textarea-bordered min-h-[120px] font-mono text-sm w-full focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-y" 
                                 placeholder="Enter each learning objective on a new line..."
