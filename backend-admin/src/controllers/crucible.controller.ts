@@ -52,6 +52,7 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
         const { 
             title, 
             description, 
+            thumbnailUrl,
             category,
             difficulty, 
             tags, 
@@ -61,13 +62,21 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
             hints,
             learningObjectives,
             prerequisites,
-            userPersonas,
+            userPersona,
             resources,
             aiHints,
-            status
+            status,
+            estimatedTime,
+            dataAssumptions,
+            edgeCases,
+            relatedResources,
+            subtasks,
+            communityTips,
+            aiPrompts,
+            technicalParameters
         } = req.body;
         
-        // Find the user by clerkId to get the MongoDB ObjectId
+        // Find the user by clerkId first
         const user = await User.findOne({ clerkId: req.auth.userId });
         if (!user) {
             res.status(404).json({ message: 'User not found' });
@@ -77,6 +86,7 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
         const problem = new CrucibleProblem({
             title,
             description,
+            thumbnailUrl,
             category,
             difficulty,
             tags,
@@ -86,11 +96,19 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
             hints,
             learningObjectives,
             prerequisites,
-            userPersonas,
+            userPersona,
             resources,
             aiHints,
             status,
-            createdBy: user._id,
+            estimatedTime,
+            dataAssumptions,
+            edgeCases,
+            relatedResources,
+            subtasks,
+            communityTips,
+            aiPrompts,
+            technicalParameters,
+            createdBy: user._id as mongoose.Types.ObjectId, // Use the actual MongoDB ObjectId from the user document
         });
         const createdProblem = await problem.save();
         
@@ -111,6 +129,7 @@ export const updateProblem = async (req: Request, res: Response, next: NextFunct
         const { 
             title, 
             description, 
+            thumbnailUrl,
             category,
             difficulty, 
             tags, 
@@ -120,30 +139,57 @@ export const updateProblem = async (req: Request, res: Response, next: NextFunct
             hints,
             learningObjectives,
             prerequisites,
-            userPersonas,
+            userPersona,
             resources,
             aiHints,
-            status
+            status,
+            estimatedTime,
+            dataAssumptions,
+            edgeCases,
+            relatedResources,
+            subtasks,
+            communityTips,
+            aiPrompts,
+            technicalParameters
         } = req.body;
         
         const problem = await CrucibleProblem.findById(req.params.id);
         if (problem) {
-            problem.title = title || problem.title;
-            problem.description = description || problem.description;
-            problem.category = category || problem.category;
-            problem.difficulty = difficulty || problem.difficulty;
-            problem.tags = tags || problem.tags;
-            problem.requirements = requirements || problem.requirements;
-            problem.constraints = constraints || problem.constraints;
-            problem.expectedOutcome = expectedOutcome || problem.expectedOutcome;
-            problem.hints = hints || problem.hints;
-            problem.learningObjectives = learningObjectives || problem.learningObjectives;
-            problem.prerequisites = prerequisites || problem.prerequisites;
-            problem.userPersonas = userPersonas || problem.userPersonas;
-            problem.resources = resources || problem.resources;
-            problem.aiHints = aiHints || problem.aiHints;
-            problem.status = status || problem.status;
-            
+            if (title !== undefined) problem.title = title;
+            if (description !== undefined) problem.description = description;
+            // @ts-ignore
+            if (thumbnailUrl !== undefined) problem.thumbnailUrl = thumbnailUrl;
+            if (category !== undefined) problem.category = category;
+            if (difficulty !== undefined) problem.difficulty = difficulty;
+            if (tags !== undefined) problem.tags = tags;
+            if (requirements !== undefined) problem.requirements = requirements;
+            if (constraints !== undefined) problem.constraints = constraints;
+            if (expectedOutcome !== undefined) problem.expectedOutcome = expectedOutcome;
+            if (hints !== undefined) problem.hints = hints;
+            if (learningObjectives !== undefined) problem.learningObjectives = learningObjectives;
+            if (prerequisites !== undefined) problem.prerequisites = prerequisites;
+            // @ts-ignore
+            if (userPersona !== undefined) (problem as any).userPersona = userPersona;
+            if (resources !== undefined) problem.resources = resources;
+            if (aiHints !== undefined) problem.aiHints = aiHints;
+            if (status !== undefined) problem.status = status;
+            // @ts-ignore
+            if (estimatedTime !== undefined) problem.estimatedTime = estimatedTime;
+            // @ts-ignore
+            if (dataAssumptions !== undefined) problem.dataAssumptions = dataAssumptions;
+            // @ts-ignore
+            if (edgeCases !== undefined) problem.edgeCases = edgeCases;
+            // @ts-ignore
+            if (relatedResources !== undefined) problem.relatedResources = relatedResources;
+            // @ts-ignore
+            if (subtasks !== undefined) problem.subtasks = subtasks;
+            // @ts-ignore
+            if (communityTips !== undefined) problem.communityTips = communityTips;
+            // @ts-ignore
+            if (aiPrompts !== undefined) problem.aiPrompts = aiPrompts;
+            // @ts-ignore
+            if (technicalParameters !== undefined) problem.technicalParameters = technicalParameters;
+
             const updatedProblem = await problem.save();
             res.json(updatedProblem);
         } else {
@@ -231,8 +277,15 @@ export const updateSolution = async (req: Request, res: Response, next: NextFunc
         }
         
         if (review) {
+            // Find the user by clerkId first
+            const user = await User.findOne({ clerkId: req.auth.userId });
+            if (!user) {
+                res.status(404).json({ message: 'User not found' });
+                return;
+            }
+            
             solution.reviews.push({
-                userId: req.user._id,
+                userId: user._id as mongoose.Types.ObjectId, // Use the actual MongoDB ObjectId
                 rating: review.rating,
                 comment: review.comment,
                 reviewedAt: new Date(),

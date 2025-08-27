@@ -1,8 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 interface IPrerequisite {
-  skill: string;
-  level: 'beginner' | 'intermediate' | 'advanced';
+  name: string;
+  link?: string;
 }
 
 interface IRelatedResource {
@@ -18,6 +18,7 @@ interface ICommunityTip {
 export interface ICrucibleProblem extends Document {
   title: string;
   description: string;
+  thumbnailUrl?: string;
   category: 'algorithms' | 'system-design' | 'web-development' | 'mobile-development' | 'data-science' | 'devops' | 'frontend' | 'backend';
   difficulty: 'easy' | 'medium' | 'hard' | 'expert';
   tags: string[];
@@ -28,9 +29,9 @@ export interface ICrucibleProblem extends Document {
   constraints: string[];
   expectedOutcome: string;
   hints: string[];
-  learningObjectives: string[];
-  prerequisites: string[];
-  userPersonas: string[];
+  learningObjectives?: string[];
+  prerequisites?: IPrerequisite[];
+  userPersona?: { name: string; journey: string };
   resources: { title: string; url: string; type: string }[];
   aiHints: { trigger: string; content: string }[];
   status: 'draft' | 'published' | 'archived';
@@ -61,6 +62,11 @@ const CrucibleProblemSchema: Schema = new Schema(
     description: {
       type: String,
       required: true,
+    },
+    thumbnailUrl: {
+      type: String,
+      default: '',
+      trim: true,
     },
     category: {
       type: String,
@@ -122,18 +128,21 @@ const CrucibleProblemSchema: Schema = new Schema(
     },
     estimatedTime: {
       type: Number,
+      default: 0,
     },
     learningObjectives: {
       type: [String],
       default: [],
     },
-    prerequisites: {
-      type: [String],
-      default: [],
-    },
-    userPersonas: {
-        type: [String],
-        default: [],
+    prerequisites: [
+      {
+        name: { type: String, required: true },
+        link: { type: String, default: '' },
+      },
+    ],
+    userPersona: {
+      name: { type: String, default: '' },
+      journey: { type: String, default: '' },
     },
     resources: [
         {
@@ -151,7 +160,7 @@ const CrucibleProblemSchema: Schema = new Schema(
     status: {
       type: String,
       enum: ['draft', 'published', 'archived'],
-      default: 'draft',
+      default: 'published',
     },
     dataAssumptions: {
       type: [String],
@@ -193,5 +202,8 @@ const CrucibleProblemSchema: Schema = new Schema(
 CrucibleProblemSchema.index({ difficulty: 1, tags: 1 });
 CrucibleProblemSchema.index({ createdBy: 1 });
 CrucibleProblemSchema.index({ createdAt: -1 });
+CrucibleProblemSchema.index({ title: 1 });
+CrucibleProblemSchema.index({ category: 1 });
+CrucibleProblemSchema.index({ status: 1 });
 
 export default mongoose.model<ICrucibleProblem>('CrucibleProblem', CrucibleProblemSchema); 

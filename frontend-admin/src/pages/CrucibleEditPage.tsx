@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, ArrowRight, X, MessageSquare, FileText, Layers, Sparkles, Book, CheckCircle2, Target, Tag } from 'lucide-react';
+import { Save, ArrowLeft, ArrowRight, X, MessageSquare, FileText, Layers, Sparkles, Book, CheckCircle2, Target, Tag, Link2 } from 'lucide-react';
 import { useApi } from '../lib/api';
 import type { ICrucibleProblemData } from './CrucibleCreatePage';
 
@@ -14,6 +14,7 @@ const CrucibleEditPage: React.FC = () => {
     const [formData, setFormData] = useState<ICrucibleProblemData>({
         title: '',
         description: '',
+        thumbnailUrl: '',
         category: 'algorithms',
         difficulty: 'medium',
         tags: [],
@@ -23,10 +24,18 @@ const CrucibleEditPage: React.FC = () => {
         hints: [],
         learningObjectives: [],
         prerequisites: [],
-        userPersonas: [],
+        userPersona: { name: '', journey: '' },
         resources: [],
         aiHints: [],
-        status: 'draft',
+        status: 'published',
+        estimatedTime: 0,
+        dataAssumptions: [],
+        edgeCases: [],
+        relatedResources: [],
+        subtasks: [],
+        communityTips: [],
+        aiPrompts: [],
+        technicalParameters: [],
     });
 
     const [activeTab, setActiveTab] = useState<string>('basic');
@@ -51,6 +60,7 @@ const CrucibleEditPage: React.FC = () => {
         { id: 'learning', label: 'Learning', icon: <Sparkles size={16} /> },
         { id: 'resources', label: 'Resources', icon: <Book size={16} /> },
         { id: 'ai', label: 'AI Hints', icon: <MessageSquare size={16} /> },
+        { id: 'advanced', label: 'Advanced', icon: <Layers size={16} /> },
     ];
 
     useEffect(() => {
@@ -58,13 +68,30 @@ const CrucibleEditPage: React.FC = () => {
             try {
                 const data = await apiFetch(`/crucible/problems/${id}`);
                 setFormData({
-                    ...data,
+                    title: data.title || '',
+                    description: data.description || '',
+                    thumbnailUrl: data.thumbnailUrl || '',
+                    category: data.category || 'algorithms',
+                    difficulty: data.difficulty || 'medium',
+                    tags: data.tags || [],
+                    requirements: data.requirements || { functional: [], nonFunctional: [] },
+                    constraints: data.constraints || [],
+                    expectedOutcome: data.expectedOutcome || '',
+                    hints: data.hints || [],
                     learningObjectives: data.learningObjectives || [],
                     prerequisites: data.prerequisites || [],
-                    userPersonas: data.userPersonas || [],
+                    userPersona: data.userPersona || { name: '', journey: '' },
                     resources: data.resources || [],
                     aiHints: data.aiHints || [],
-                    status: data.status || 'draft',
+                    status: data.status || 'published',
+                    estimatedTime: data.estimatedTime ?? 0,
+                    dataAssumptions: data.dataAssumptions || [],
+                    edgeCases: data.edgeCases || [],
+                    relatedResources: data.relatedResources || [],
+                    subtasks: data.subtasks || [],
+                    communityTips: data.communityTips || [],
+                    aiPrompts: data.aiPrompts || [],
+                    technicalParameters: data.technicalParameters || [],
                 });
             } catch (err) {
                 setError('Failed to fetch problem');
@@ -80,7 +107,7 @@ const CrucibleEditPage: React.FC = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleListChange = (name: 'constraints' | 'hints' | 'learningObjectives' | 'prerequisites' | 'userPersonas', value: string) => {
+    const handleListChange = (name: 'constraints' | 'hints' | 'learningObjectives' | 'dataAssumptions' | 'edgeCases' | 'subtasks' | 'aiPrompts' | 'technicalParameters', value: string) => {
         setFormData(prev => ({ ...prev, [name]: value.split(',').map(item => item.trim()).filter(Boolean) }));
     };
 
@@ -381,6 +408,37 @@ const CrucibleEditPage: React.FC = () => {
                             </div>
                         </div>
 
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="form-control">
+                                <label className="label pb-1 flex items-center gap-2">
+                                    <Link2 size={14} className="text-primary" />
+                                    <span className="label-text font-medium">Thumbnail URL</span>
+                                </label>
+                                <input 
+                                    type="url" 
+                                    name="thumbnailUrl" 
+                                    value={formData.thumbnailUrl || ''} 
+                                    onChange={handleChange} 
+                                    className="input input-bordered focus:border-primary focus:ring-1 focus:ring-primary transition-all" 
+                                    placeholder="https://..."
+                                />
+                            </div>
+                            <div className="form-control">
+                                <label className="label pb-1 flex items-center gap-2">
+                                    <Layers size={14} className="text-primary" />
+                                    <span className="label-text font-medium">Estimated Time (mins)</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    name="estimatedTime" 
+                                    value={formData.estimatedTime ?? 0} 
+                                    onChange={(e) => setFormData(prev => ({ ...prev, estimatedTime: Number(e.target.value) }))} 
+                                    className="input input-bordered focus:border-primary focus:ring-1 focus:ring-primary transition-all" 
+                                    min={0}
+                                />
+                            </div>
+                        </div>
+
                         <div className="form-control bg-base-100 rounded-lg border border-base-200 p-4 transition-all hover:border-primary/30">
                             <label className="label pb-1 flex items-center gap-2">
                                 <X size={14} className="text-primary" />
@@ -535,25 +593,29 @@ const CrucibleEditPage: React.FC = () => {
                                 <Book size={14} className="text-primary" />
                                 <span className="label-text font-medium">Prerequisites</span>
                             </label>
-                            <textarea 
-                                value={formData.prerequisites.join('\n')} 
-                                onChange={e => handleListChange('prerequisites', e.target.value.split('\n').join(','))} 
-                                className="textarea textarea-bordered min-h-[120px] font-mono text-sm w-full focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-y" 
-                                placeholder="Enter each prerequisite on a new line..."
-                            />
+                            <div className="space-y-3">
+                                {(formData.prerequisites || []).map((p, idx) => (
+                                    <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <input className="input input-bordered" value={p.name} placeholder="Prerequisite name" onChange={(e) => setFormData(prev => { const next = [...(prev.prerequisites || [])]; next[idx] = { ...next[idx], name: e.target.value }; return { ...prev, prerequisites: next }; })} />
+                                        <div className="flex gap-2">
+                                            <input className="input input-bordered flex-1" value={p.link || ''} placeholder="Optional link" onChange={(e) => setFormData(prev => { const next = [...(prev.prerequisites || [])]; next[idx] = { ...next[idx], link: e.target.value }; return { ...prev, prerequisites: next }; })} />
+                                            <button type="button" className="btn btn-ghost btn-xs" onClick={() => setFormData(prev => ({ ...prev, prerequisites: (prev.prerequisites || []).filter((_, i) => i !== idx) }))}>Remove</button>
+                                        </div>
+                                    </div>
+                                ))}
+                                <button type="button" className="btn btn-outline btn-sm" onClick={() => setFormData(prev => ({ ...prev, prerequisites: [...(prev.prerequisites || []), { name: '', link: '' }] }))}>Add prerequisite</button>
+                            </div>
                         </div>
 
                         <div className="form-control bg-base-100 rounded-lg border border-base-200 p-4 transition-all hover:border-primary/30">
                             <label className="label pb-1 flex items-center gap-2">
                                 <FileText size={14} className="text-primary" />
-                                <span className="label-text font-medium">User Personas</span>
+                                <span className="label-text font-medium">User Persona</span>
                             </label>
-                            <textarea 
-                                value={formData.userPersonas.join('\n')} 
-                                onChange={e => handleListChange('userPersonas', e.target.value.split('\n').join(','))} 
-                                className="textarea textarea-bordered min-h-[120px] font-mono text-sm w-full focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-y" 
-                                placeholder="Enter each user persona on a new line..."
-                            />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input className="input input-bordered" placeholder="Persona name" value={formData.userPersona?.name || ''} onChange={(e) => setFormData(prev => ({ ...prev, userPersona: { ...(prev.userPersona || { name: '', journey: '' }), name: e.target.value } }))} />
+                                <input className="input input-bordered" placeholder="Persona journey" value={formData.userPersona?.journey || ''} onChange={(e) => setFormData(prev => ({ ...prev, userPersona: { ...(prev.userPersona || { name: '', journey: '' }), journey: e.target.value } }))} />
+                            </div>
                         </div>
                     </div>
 
@@ -744,6 +806,61 @@ const CrucibleEditPage: React.FC = () => {
                                     )}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    {/* Advanced Tab */}
+                    <div className={`space-y-4 ${activeTab !== 'advanced' ? 'hidden' : ''}`}>
+                        <div className="form-control bg-base-100 rounded-lg border border-base-200 p-4">
+                            <label className="label pb-1"><span className="label-text font-medium">Related Resources</span></label>
+                            <div className="space-y-3">
+                                {(formData.relatedResources || []).map((r, idx) => (
+                                    <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <input className="input input-bordered" value={r.title} placeholder="Title" onChange={(e) => setFormData(prev => { const next = [...(prev.relatedResources || [])]; next[idx] = { ...next[idx], title: e.target.value }; return { ...prev, relatedResources: next }; })} />
+                                        <div className="flex gap-2">
+                                            <input className="input input-bordered flex-1" value={r.link} placeholder="https://..." onChange={(e) => setFormData(prev => { const next = [...(prev.relatedResources || [])]; next[idx] = { ...next[idx], link: e.target.value }; return { ...prev, relatedResources: next }; })} />
+                                            <button type="button" className="btn btn-ghost btn-xs" onClick={() => setFormData(prev => ({ ...prev, relatedResources: (prev.relatedResources || []).filter((_, i) => i !== idx) }))}>Remove</button>
+                                        </div>
+                                    </div>
+                                ))}
+                                <button type="button" className="btn btn-outline btn-sm" onClick={() => setFormData(prev => ({ ...prev, relatedResources: [...(prev.relatedResources || []), { title: '', link: '' }] }))}>Add related resource</button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {[
+                                { key: 'dataAssumptions', label: 'Data Assumptions' },
+                                { key: 'edgeCases', label: 'Edge Cases' },
+                                { key: 'subtasks', label: 'Subtasks' },
+                                { key: 'aiPrompts', label: 'AI Prompts' },
+                                { key: 'technicalParameters', label: 'Technical Parameters' },
+                            ].map(({ key, label }) => (
+                                <div key={key} className="form-control bg-base-100 rounded-lg border border-base-200 p-4">
+                                    <label className="label pb-1"><span className="label-text font-medium">{label}</span></label>
+                                    <textarea 
+                                        value={(formData as any)[key]?.join('\n') || ''}
+                                        onChange={(e) => handleListChange(key as any, e.target.value.split('\n').join(','))}
+                                        className="textarea textarea-bordered min-h-[120px] font-mono text-sm w-full"
+                                        placeholder={`Enter each ${label.toLowerCase()} on a new line...`}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="form-control bg-base-100 rounded-lg border border-base-200 p-4">
+                            <label className="label pb-1"><span className="label-text font-medium">Community Tips</span></label>
+                            <div className="space-y-3">
+                                {(formData.communityTips || []).map((t, idx) => (
+                                    <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <input className="input input-bordered" value={t.content} placeholder="Tip content" onChange={(e) => setFormData(prev => { const next = [...(prev.communityTips || [])]; next[idx] = { ...next[idx], content: e.target.value }; return { ...prev, communityTips: next }; })} />
+                                        <div className="flex gap-2">
+                                            <input className="input input-bordered flex-1" value={t.author || ''} placeholder="Author (optional)" onChange={(e) => setFormData(prev => { const next = [...(prev.communityTips || [])]; next[idx] = { ...next[idx], author: e.target.value }; return { ...prev, communityTips: next }; })} />
+                                            <button type="button" className="btn btn-ghost btn-xs" onClick={() => setFormData(prev => ({ ...prev, communityTips: (prev.communityTips || []).filter((_, i) => i !== idx) }))}>Remove</button>
+                                        </div>
+                                    </div>
+                                ))}
+                                <button type="button" className="btn btn-outline btn-sm" onClick={() => setFormData(prev => ({ ...prev, communityTips: [...(prev.communityTips || []), { content: '', author: '' }] }))}>Add tip</button>
+                            </div>
                         </div>
                     </div>
 

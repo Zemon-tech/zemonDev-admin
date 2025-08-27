@@ -6,6 +6,7 @@ import { Save, ArrowLeft, ArrowRight, Plus, X, Tag, Book, Target, Link2, Message
 export interface ICrucibleProblemData {
     title: string;
     description: string;
+    thumbnailUrl?: string;
     category: 'algorithms' | 'system-design' | 'web-development' | 'mobile-development' | 'data-science' | 'devops' | 'frontend' | 'backend';
     difficulty: 'easy' | 'medium' | 'hard' | 'expert';
     tags: string[];
@@ -16,9 +17,9 @@ export interface ICrucibleProblemData {
     constraints: string[];
     expectedOutcome: string;
     hints: string[];
-    learningObjectives: string[];
-    prerequisites: string[];
-    userPersonas: string[];
+    learningObjectives?: string[];
+    prerequisites?: { name: string; link?: string }[];
+    userPersona?: { name: string; journey: string };
     resources: {
         title: string;
         url: string;
@@ -29,6 +30,14 @@ export interface ICrucibleProblemData {
         content: string;
     }[];
     status: 'draft' | 'published' | 'archived';
+    estimatedTime?: number;
+    dataAssumptions?: string[];
+    edgeCases?: string[];
+    relatedResources?: { title: string; link: string }[];
+    subtasks?: string[];
+    communityTips?: { content: string; author?: string }[];
+    aiPrompts?: string[];
+    technicalParameters?: string[];
 }
 
 const CrucibleCreatePage: React.FC = () => {
@@ -37,6 +46,7 @@ const CrucibleCreatePage: React.FC = () => {
     const [formData, setFormData] = useState<ICrucibleProblemData>({
         title: '',
         description: '',
+        thumbnailUrl: '',
         category: 'algorithms',
         difficulty: 'medium',
         tags: [],
@@ -46,10 +56,18 @@ const CrucibleCreatePage: React.FC = () => {
         hints: [],
         learningObjectives: [],
         prerequisites: [],
-        userPersonas: [],
+        userPersona: { name: '', journey: '' },
         resources: [],
         aiHints: [],
-        status: 'draft',
+        status: 'published',
+        estimatedTime: 0,
+        dataAssumptions: [],
+        edgeCases: [],
+        relatedResources: [],
+        subtasks: [],
+        communityTips: [],
+        aiPrompts: [],
+        technicalParameters: [],
     });
 
     const [activeTab, setActiveTab] = useState<string>('basic');
@@ -63,7 +81,7 @@ const CrucibleCreatePage: React.FC = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleListChange = (name: 'constraints' | 'hints' | 'learningObjectives' | 'prerequisites' | 'userPersonas', value: string) => {
+    const handleListChange = (name: 'constraints' | 'hints' | 'learningObjectives' | 'dataAssumptions' | 'edgeCases' | 'subtasks' | 'aiPrompts' | 'technicalParameters', value: string) => {
         setFormData(prev => ({ ...prev, [name]: value.split(',').map(item => item.trim()).filter(Boolean) }));
     };
 
@@ -170,6 +188,7 @@ const CrucibleCreatePage: React.FC = () => {
         { id: 'learning', label: 'Learning', icon: <Sparkles size={16} /> },
         { id: 'resources', label: 'Resources', icon: <Book size={16} /> },
         { id: 'ai', label: 'AI Hints', icon: <MessageSquare size={16} /> },
+        { id: 'advanced', label: 'Advanced', icon: <Layers size={16} /> },
     ];
 
     const navigateTab = (direction: 'next' | 'prev') => {
@@ -398,6 +417,38 @@ const CrucibleCreatePage: React.FC = () => {
                             </p>
                         </div>
 
+                        {/* Thumbnail URL and Estimated Time */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="form-control">
+                                <label className="label pb-1 flex items-center gap-2">
+                                    <Link2 size={14} className="text-primary" />
+                                    <span className="label-text font-medium">Thumbnail URL</span>
+                                </label>
+                                <input
+                                    type="url"
+                                    name="thumbnailUrl"
+                                    value={formData.thumbnailUrl || ''}
+                                    onChange={handleChange}
+                                    className="input input-bordered focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                                    placeholder="https://..."
+                                />
+                            </div>
+                            <div className="form-control">
+                                <label className="label pb-1 flex items-center gap-2">
+                                    <Layers size={14} className="text-primary" />
+                                    <span className="label-text font-medium">Estimated Time (mins)</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    name="estimatedTime"
+                                    value={formData.estimatedTime ?? 0}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, estimatedTime: Number(e.target.value) }))}
+                                    className="input input-bordered focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                                    min={0}
+                                />
+                            </div>
+                        </div>
+
                         {/* Expected Outcome */}
                         <div className="form-control bg-base-100 rounded-lg border border-base-200 p-4 transition-all hover:border-primary/30">
                             <label className="label pb-1 flex items-center gap-2">
@@ -576,7 +627,7 @@ Example:
                                     <Sparkles size={60} className="text-primary/10" />
                                 </div>
                                 <textarea 
-                                    value={formData.learningObjectives.join('\n')}
+                                    value={formData.learningObjectives?.join('\n')}
                                     onChange={(e) => handleListChange('learningObjectives', e.target.value.split('\n').join(','))}
                                     className="textarea textarea-bordered min-h-[200px] font-mono text-sm w-full focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-y"
                                     placeholder="Enter each learning objective on a new line...
@@ -604,8 +655,16 @@ Example:
                                     <Book size={60} className="text-primary/10" />
                                 </div>
                                 <textarea 
-                                    value={formData.prerequisites.join('\n')}
-                                    onChange={(e) => handleListChange('prerequisites', e.target.value.split('\n').join(','))}
+                                    value={formData.prerequisites?.map(p => `${p.name}${p.link ? ` (${p.link})` : ''}`).join('\n')}
+                                    onChange={(e) => setFormData(prev => ({
+                                        ...prev,
+                                        prerequisites: e.target.value.split('\n').map(item => {
+                                            const parts = item.trim().split('(');
+                                            const name = parts[0].trim();
+                                            const link = parts.length > 1 ? parts[1].replace(')', '').trim() : undefined;
+                                            return { name, link };
+                                        }).filter(Boolean)
+                                    }))}
                                     className="textarea textarea-bordered min-h-[120px] font-mono text-sm w-full focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-y"
                                     placeholder="Enter each prerequisite on a new line...
 Example:
@@ -632,15 +691,21 @@ Example:
                                     <Target size={60} className="text-primary/10" />
                                 </div>
                                 <textarea 
-                                    value={formData.userPersonas.join('\n')}
-                                    onChange={(e) => handleListChange('userPersonas', e.target.value.split('\n').join(','))}
+                                    value={formData.userPersona?.name ? `${formData.userPersona.name} (${formData.userPersona.journey})` : ''}
+                                    onChange={(e) => setFormData(prev => ({
+                                        ...prev,
+                                        userPersona: e.target.value.trim() ? {
+                                            name: e.target.value.split('(')[0].trim(),
+                                            journey: e.target.value.split('(').length > 1 ? e.target.value.split('(')[1].replace(')', '').trim() : ''
+                                        } : undefined
+                                    }))}
                                     className="textarea textarea-bordered min-h-[120px] font-mono text-sm w-full focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-y"
-                                    placeholder="Enter each target user type on a new line...
+                                    placeholder="Enter the target user type and their journey...
 Example:
-- Junior Backend Developers
-- Frontend Developers learning API design
-- Full-stack developers
-- DevOps engineers"
+- Junior Backend Developers (Building a new API)
+- Frontend Developers learning API design (Learning about authentication)
+- Full-stack developers (Building a complex application)
+- DevOps engineers (Managing infrastructure)"
                                 />
                             </div>
                             <label className="label pt-1">
@@ -923,6 +988,89 @@ Example:
                                     </table>
                                 </div>
                             )}
+                        </div>
+                    </div>
+
+                    {/* Advanced Tab */}
+                    <div className={`space-y-4 ${activeTab !== 'advanced' ? 'hidden' : ''}`}>
+                        {/* Related Resources (title/link) */}
+                        <div className="form-control bg-base-100 rounded-lg border border-base-200 p-4">
+                            <label className="label pb-1 flex items-center gap-2">
+                                <Link2 size={14} className="text-primary" />
+                                <span className="label-text font-medium">Related Resources</span>
+                            </label>
+                            <div className="space-y-3">
+                                {(formData.relatedResources || []).map((r, idx) => (
+                                    <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <input
+                                            className="input input-bordered"
+                                            value={r.title}
+                                            placeholder="Title"
+                                            onChange={(e) => setFormData(prev => {
+                                                const next = [...(prev.relatedResources || [])];
+                                                next[idx] = { ...next[idx], title: e.target.value };
+                                                return { ...prev, relatedResources: next };
+                                            })}
+                                        />
+                                        <div className="flex gap-2">
+                                            <input
+                                                className="input input-bordered flex-1"
+                                                value={r.link}
+                                                placeholder="https://..."
+                                                onChange={(e) => setFormData(prev => {
+                                                    const next = [...(prev.relatedResources || [])];
+                                                    next[idx] = { ...next[idx], link: e.target.value };
+                                                    return { ...prev, relatedResources: next };
+                                                })}
+                                            />
+                                            <button type="button" className="btn btn-ghost" onClick={() => setFormData(prev => ({ ...prev, relatedResources: (prev.relatedResources || []).filter((_, i) => i !== idx) }))}><Trash2 size={16} /></button>
+                                        </div>
+                                    </div>
+                                ))}
+                                <button type="button" className="btn btn-outline btn-sm" onClick={() => setFormData(prev => ({ ...prev, relatedResources: [...(prev.relatedResources || []), { title: '', link: '' }] }))}>
+                                    <Plus size={14} className="mr-1" /> Add related resource
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Data Assumptions, Edge Cases, Subtasks, AI Prompts, Technical Parameters */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {[
+                                { key: 'dataAssumptions', label: 'Data Assumptions' },
+                                { key: 'edgeCases', label: 'Edge Cases' },
+                                { key: 'subtasks', label: 'Subtasks' },
+                                { key: 'aiPrompts', label: 'AI Prompts' },
+                                { key: 'technicalParameters', label: 'Technical Parameters' },
+                            ].map(({ key, label }) => (
+                                <div key={key} className="form-control bg-base-100 rounded-lg border border-base-200 p-4">
+                                    <label className="label pb-1"><span className="label-text font-medium">{label}</span></label>
+                                    <textarea
+                                        value={(formData as any)[key]?.join('\n') || ''}
+                                        onChange={(e) => handleListChange(key as any, e.target.value.split('\n').join(','))}
+                                        className="textarea textarea-bordered min-h-[120px] font-mono text-sm w-full"
+                                        placeholder={`Enter each ${label.toLowerCase()} on a new line...`}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Community Tips */}
+                        <div className="form-control bg-base-100 rounded-lg border border-base-200 p-4">
+                            <label className="label pb-1"><span className="label-text font-medium">Community Tips</span></label>
+                            <div className="space-y-3">
+                                {(formData.communityTips || []).map((t, idx) => (
+                                    <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <input className="input input-bordered" value={t.content} placeholder="Tip content" onChange={(e) => setFormData(prev => { const next = [...(prev.communityTips || [])]; next[idx] = { ...next[idx], content: e.target.value }; return { ...prev, communityTips: next }; })} />
+                                        <div className="flex gap-2">
+                                            <input className="input input-bordered flex-1" value={t.author || ''} placeholder="Author (optional)" onChange={(e) => setFormData(prev => { const next = [...(prev.communityTips || [])]; next[idx] = { ...next[idx], author: e.target.value }; return { ...prev, communityTips: next }; })} />
+                                            <button type="button" className="btn btn-ghost" onClick={() => setFormData(prev => ({ ...prev, communityTips: (prev.communityTips || []).filter((_, i) => i !== idx) }))}><Trash2 size={16} /></button>
+                                        </div>
+                                    </div>
+                                ))}
+                                <button type="button" className="btn btn-outline btn-sm" onClick={() => setFormData(prev => ({ ...prev, communityTips: [...(prev.communityTips || []), { content: '', author: '' }] }))}>
+                                    <Plus size={14} className="mr-1" /> Add tip
+                                </button>
+                            </div>
                         </div>
                     </div>
 
