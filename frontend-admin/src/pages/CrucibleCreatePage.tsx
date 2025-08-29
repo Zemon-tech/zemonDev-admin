@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../lib/api';
-import { Save, ArrowRight, Plus, X, Tag, Book, Target, Link2, MessageSquare, Trash2, Sparkles, FileText, Layers, CheckCircle2 } from 'lucide-react';
+import { Save, Plus, X, Tag, Book, Target, Link2, MessageSquare, Trash2, Sparkles, FileText, Layers, CheckCircle2 } from 'lucide-react';
 import { useUIChrome } from '../components/layout/UIChromeContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -204,14 +204,7 @@ const CrucibleCreatePage: React.FC = () => {
         { id: 'json', label: 'Import JSON', icon: <FileText size={16} /> },
     ];
 
-    const navigateTab = (direction: 'next' | 'prev') => {
-        const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
-        if (direction === 'next' && currentIndex < tabs.length - 1) {
-            setActiveTab(tabs[currentIndex + 1].id);
-        } else if (direction === 'prev' && currentIndex > 0) {
-            setActiveTab(tabs[currentIndex - 1].id);
-        }
-    };
+
 
     useEffect(() => {
         setNavbarTitle(
@@ -229,10 +222,10 @@ const CrucibleCreatePage: React.FC = () => {
             <div className="flex items-center gap-2">
                 <button 
                     type="button"
-                    onClick={() => navigateTab('next')} 
+                    onClick={() => navigate('/admin/crucible')}
                     className="btn btn-ghost btn-sm"
                 >
-                    Next <ArrowRight size={14} />
+                    Cancel
                 </button>
                 <button 
                     type="button"
