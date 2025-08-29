@@ -175,7 +175,9 @@ const CrucibleListPage: React.FC = () => {
     };
 
     const truncateTitle = (title: string, maxLength: number = 40) => {
-        return title.length > maxLength ? `${title.substring(0, maxLength)}...` : title;
+        // Remove any trailing "0" and trim whitespace
+        const cleanTitle = title.replace(/\s*0$/, '').trim();
+        return cleanTitle.length > maxLength ? `${cleanTitle.substring(0, maxLength)}...` : cleanTitle;
     };
 
     const calculateAnalytics = (problem: ICrucibleProblem) => {
@@ -385,7 +387,7 @@ const CrucibleListPage: React.FC = () => {
                                                 <td className="p-3">
                                                     <div className="max-w-[200px]">
                                                         <div className="font-medium" title={problem.title}>
-                                                            {truncateTitle(problem.title)}
+                                                            {truncateTitle(problem.title.replace(/\s*0$/, ''))}
                                                         </div>
                                                         {problem.estimatedTime && (
                                                             <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
@@ -493,7 +495,7 @@ const CrucibleListPage: React.FC = () => {
                                                                         Problem Details
                                                                     </h4>
                                                                     <div className="space-y-2 text-sm">
-                                                                        <div><strong>Full Title:</strong> {problem.title}</div>
+                                                                        <div><strong>Full Title:</strong> {problem.title.replace(/\s*0$/, '')}</div>
                                                                         <div><strong>Description:</strong> {problem.description.substring(0, 150)}...</div>
                                                                         <div><strong>Difficulty:</strong> 
                                                                             <Badge variant="secondary" className={`ml-2 ${getDifficultyBadgeClass(problem.difficulty)}`}>
