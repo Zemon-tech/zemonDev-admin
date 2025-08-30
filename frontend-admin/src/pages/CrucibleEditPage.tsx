@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, ArrowRight, X, MessageSquare, FileText, Layers, Sparkles, Book, CheckCircle2, Target, Tag, Link2 } from 'lucide-react';
+import { Save, X, MessageSquare, FileText, Layers, Sparkles, Book, CheckCircle2, Target, Tag, Link2, Plus, Trash2 } from 'lucide-react';
 import { useApi } from '../lib/api';
+import { useUIChrome } from '../components/layout/UIChromeContext';
+import { Separator } from '../components/ui/separator';
 import type { ICrucibleProblemData } from './CrucibleCreatePage';
 
 const CrucibleEditPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const apiFetch = useApi();
+    const { setNavbarTitle, setNavbarActions, setTopbar } = useUIChrome();
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const apiFetch = useApi();
 
     const [formData, setFormData] = useState<ICrucibleProblemData>({
         title: '',
@@ -53,14 +56,16 @@ const CrucibleEditPage: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
     const [saveSuccess, setSaveSuccess] = useState(false);
+    const [jsonInput, setJsonInput] = useState('');
+    const [jsonError, setJsonError] = useState<string | null>(null);
 
     const tabs = [
         { id: 'basic', label: 'Basic Info', icon: <FileText size={16} /> },
         { id: 'requirements', label: 'Requirements', icon: <Layers size={16} /> },
         { id: 'learning', label: 'Learning', icon: <Sparkles size={16} /> },
-        { id: 'resources', label: 'Resources', icon: <Book size={16} /> },
-        { id: 'ai', label: 'AI Hints', icon: <MessageSquare size={16} /> },
+        { id: 'resources', label: 'Resources & AI', icon: <Book size={16} /> },
         { id: 'advanced', label: 'Advanced', icon: <Layers size={16} /> },
+        { id: 'json', label: 'Import JSON', icon: <FileText size={16} /> },
     ];
 
     useEffect(() => {
@@ -101,6 +106,68 @@ const CrucibleEditPage: React.FC = () => {
         };
         fetchProblem();
     }, [id, apiFetch]);
+
+    useEffect(() => {
+        setNavbarTitle(
+            <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-primary/10 text-primary rounded-lg">
+                    <Target size={18} />
+                </div>
+                <div className="leading-tight">
+                    <div className="text-sm font-medium">Edit Problem</div>
+                    <div className="text-xs text-base-content/70">Update problem details and content</div>
+                </div>
+            </div>
+        );
+        setNavbarActions(
+            <div className="flex items-center gap-2">
+                <button 
+                    type="button"
+                    onClick={() => navigate('/admin/crucible')}
+                    className="btn btn-ghost btn-sm"
+                >
+                    Cancel
+                </button>
+                <button 
+                    type="button"
+                    onClick={() => (document.querySelector('#crucible-edit-form') as HTMLFormElement)?.requestSubmit()}
+                    className="btn btn-primary btn-sm"
+                    disabled={isSaving}
+                >
+                    {isSaving ? (
+                        <>
+                            <span className="loading loading-spinner loading-xs"></span>
+                            Saving...
+                        </>
+                    ) : (
+                        <>
+                            <Save size={14} /> Save Changes
+                        </>
+                    )}
+                </button>
+            </div>
+        );
+        setTopbar(
+            <div className="flex overflow-x-auto no-scrollbar">
+                {tabs.map((tab) => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`px-4 py-3 text-sm inline-flex items-center gap-2 transition-colors border-b-2 -mb-px ${activeTab === tab.id ? 'text-primary border-primary' : 'text-base-content/70 border-transparent hover:text-primary'}`}
+                    >
+                        <span className={`p-1 rounded ${activeTab === tab.id ? 'bg-primary/10' : 'bg-base-200'}`}>{tab.icon}</span>
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+        );
+
+        return () => {
+            setNavbarTitle(null);
+            setNavbarActions(null);
+            setTopbar(null);
+        };
+    }, [activeTab, isSaving]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -169,14 +236,7 @@ const CrucibleEditPage: React.FC = () => {
         }));
     };
 
-    const navigateTab = (direction: 'next' | 'prev') => {
-        const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
-        if (direction === 'next' && currentIndex < tabs.length - 1) {
-            setActiveTab(tabs[currentIndex + 1].id);
-        } else if (direction === 'prev' && currentIndex > 0) {
-            setActiveTab(tabs[currentIndex - 1].id);
-        }
-    };
+
     
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -240,88 +300,10 @@ const CrucibleEditPage: React.FC = () => {
     if (error) return <div className="alert alert-error">Error: {error}</div>;
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-6xl">
-            {/* Page Header */}
-            <div className="mb-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="p-1.5 bg-primary/10 text-primary rounded-lg">
-                            <Target size={20} />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-medium">Edit Problem</h1>
-                            <p className="text-sm text-base-content/70">Update problem details and content</p>
-                        </div>
-                    </div>
-                    <button 
-                        onClick={() => {
-                            console.log('Cancel button clicked, navigating to /admin/crucible');
-                            navigate('/admin/crucible');
-                        }} 
-                        className="btn btn-outline btn-sm"
-                    >
-                        Cancel
-                    </button>
-                </div>
-                
-                <div className="mt-4 flex items-center">
-                    <div className="w-full bg-base-200 h-1.5 rounded-full overflow-hidden">
-                        {tabs.map((tab, index) => {
-                            const currentIndex = tabs.findIndex(t => t.id === activeTab);
-                            return (
-                                <div 
-                                    key={tab.id}
-                                    className={`h-full transition-all duration-300 ${index <= currentIndex ? 'bg-primary' : 'bg-transparent'}`}
-                                    style={{ width: `${100 / tabs.length}%`, float: 'left' }}
-                                />
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-            
-            {/* Main Card */}
-            <div className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
-                {/* Tab Navigation */}
-                <div className="bg-base-100 border-b border-base-200 sticky top-0 z-10">
-                    <div className="flex overflow-x-auto scrollbar-hide">
-                        {tabs.map((tab, index) => (
-                            <button 
-                                key={tab.id}
-                                className={`
-                                    relative flex items-center gap-1.5 px-4 py-2.5 transition-all duration-200 text-sm
-                                    ${activeTab === tab.id 
-                                        ? 'text-primary font-medium' 
-                                        : 'text-base-content/70 hover:text-primary hover:bg-base-200/50'
-                                    }
-                                `}
-                                onClick={() => setActiveTab(tab.id)}
-                            >
-                                <div className={`rounded-full p-1 ${activeTab === tab.id ? 'bg-primary/10' : 'bg-base-200'}`}>
-                                    {tab.icon}
-                                </div>
-                                <span>{tab.label}</span>
-                                
-                                {/* Active tab indicator */}
-                                {activeTab === tab.id && (
-                                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></div>
-                                )}
-                                
-                                {/* Step indicator */}
-                                <div className="ml-1">
-                                    <div className={`rounded-full w-3.5 h-3.5 flex items-center justify-center text-[10px] 
-                                        ${activeTab === tab.id 
-                                            ? 'bg-primary text-white' 
-                                            : 'bg-base-200 text-base-content/70'}`}>
-                                        {index + 1}
-                                    </div>
-                                </div>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <form onSubmit={handleSubmit} className="p-4">
+        <div className="w-full h-full">
+            {/* Content */}
+            <div className="px-2 md:px-4 pb-16">
+                <form id="crucible-edit-form" onSubmit={handleSubmit} className="">
                     {/* Basic Info Tab */}
                     <div className={`space-y-4 ${activeTab !== 'basic' ? 'hidden' : ''}`}>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -619,12 +601,13 @@ const CrucibleEditPage: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Resources Tab */}
+                    {/* Resources & AI Tab */}
                     <div className={`space-y-4 ${activeTab !== 'resources' ? 'hidden' : ''}`}>
+                        {/* Add Resource Form */}
                         <div className="card bg-base-100 p-6 rounded-xl border border-base-200 transition-all hover:border-primary/30">
                             <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
                                 <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
-                                    <Book size={18} />
+                                    <Link2 size={18} />
                                 </div>
                                 Add Learning Resource
                             </h2>
@@ -643,22 +626,24 @@ const CrucibleEditPage: React.FC = () => {
                                         placeholder="e.g., TypeScript Handbook"
                                     />
                                 </div>
+                                
                                 <div className="form-control">
                                     <label className="label pb-1 flex items-center gap-2">
-                                        <Book size={14} className="text-primary" />
+                                        <Link2 size={14} className="text-primary" />
                                         <span className="label-text font-medium">URL</span>
                                     </label>
                                     <input 
-                                        type="text" 
+                                        type="url" 
                                         value={newResource.url} 
                                         onChange={e => setNewResource({...newResource, url: e.target.value})} 
                                         className="input input-bordered focus:border-primary focus:ring-1 focus:ring-primary transition-all" 
                                         placeholder="https://..."
                                     />
                                 </div>
+                                
                                 <div className="form-control">
                                     <label className="label pb-1 flex items-center gap-2">
-                                        <FileText size={14} className="text-primary" />
+                                        <Book size={14} className="text-primary" />
                                         <span className="label-text font-medium">Type</span>
                                     </label>
                                     <select 
@@ -667,67 +652,94 @@ const CrucibleEditPage: React.FC = () => {
                                         className="select select-bordered focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                                     >
                                         <option value="article">Article</option>
-                                        <option value="video">Video</option>
+                                        <option value="video">Video Tutorial</option>
                                         <option value="documentation">Documentation</option>
-                                        <option value="tool">Tool</option>
-                                        <option value="other">Other</option>
+                                        <option value="tool">Tool/Library</option>
+                                        <option value="other">Other Resource</option>
                                     </select>
                                 </div>
                             </div>
-                            <button 
-                                type="button" 
-                                onClick={handleAddResource} 
-                                className="btn btn-primary btn-sm mt-4"
-                                disabled={!newResource.title || !newResource.url}
-                            >
-                                Add Resource
-                            </button>
+
+                            <div className="mt-4">
+                                <button 
+                                    type="button" 
+                                    onClick={handleAddResource} 
+                                    className="btn btn-primary btn-sm"
+                                    disabled={!newResource.title || !newResource.url}
+                                >
+                                    <Plus size={16} className="mr-1" /> Add Resource
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="overflow-x-auto">
-                            <table className="table table-zebra w-full">
-                                <thead>
-                                    <tr>
-                                        <th>Title</th>
-                                        <th>Type</th>
-                                        <th>URL</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {formData.resources.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={4} className="text-center py-4 text-base-content/70">No resources added yet</td>
-                                        </tr>
-                                    ) : (
-                                        formData.resources.map((resource, index) => (
-                                            <tr key={index}>
-                                                <td>{resource.title}</td>
-                                                <td><span className="badge badge-ghost capitalize">{resource.type}</span></td>
-                                                <td className="truncate max-w-xs">
-                                                    <a href={resource.url} target="_blank" rel="noopener noreferrer" className="link link-primary">
-                                                        {resource.url}
-                                                    </a>
-                                                </td>
-                                                <td>
-                                                    <button 
-                                                        type="button" 
-                                                        onClick={() => handleRemoveResource(index)} 
-                                                        className="btn btn-ghost btn-xs text-error"
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                </td>
+                        {/* Resource List */}
+                        <div className="card bg-base-100 p-6 rounded-xl border border-base-200 transition-all hover:border-primary/30">
+                            <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+                                <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                                    <Book size={18} />
+                                </div>
+                                Learning Resources
+                            </h2>
+                            
+                            {formData.resources.length === 0 ? (
+                                <div className="text-center py-8 text-base-content/70 bg-base-200/30 rounded-lg border border-dashed border-base-300">
+                                    <Book size={40} className="mx-auto mb-3 opacity-50" />
+                                    <p>No resources added yet</p>
+                                    <p className="text-sm mt-1">Add some helpful resources for users to learn from</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto rounded-lg border border-base-200">
+                                    <table className="table w-full">
+                                        <thead className="bg-base-200/50">
+                                            <tr>
+                                                <th>Title</th>
+                                                <th>Type</th>
+                                                <th>URL</th>
+                                                <th className="w-20">Action</th>
                                             </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
+                                        </thead>
+                                        <tbody>
+                                            {formData.resources.map((resource, index) => (
+                                                <tr key={index} className="hover">
+                                                    <td className="font-medium">{resource.title}</td>
+                                                    <td>
+                                                        <span className={`badge badge-sm ${
+                                                            resource.type === 'article' ? 'badge-info' :
+                                                            resource.type === 'video' ? 'badge-warning' :
+                                                            resource.type === 'documentation' ? 'badge-success' :
+                                                            resource.type === 'tool' ? 'badge-secondary' : 'badge-neutral'
+                                                        }`}>
+                                                            {resource.type.charAt(0).toUpperCase() + resource.type.slice(1)}
+                                                        </span>
+                                                    </td>
+                                                    <td className="font-mono text-sm">
+                                                        <a 
+                                                            href={resource.url} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="link link-primary"
+                                                        >
+                                                            {resource.url.length > 40 ? resource.url.substring(0, 40) + '...' : resource.url}
+                                                        </a>
+                                                    </td>
+                                                    <td>
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => handleRemoveResource(index)} 
+                                                            className="btn btn-ghost btn-sm text-error hover:bg-error/10"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
-                    </div>
 
-                    {/* AI Hints Tab */}
-                    <div className={`space-y-4 ${activeTab !== 'ai' ? 'hidden' : ''}`}>
+                        {/* Add AI Hint Form */}
                         <div className="card bg-base-100 p-6 rounded-xl border border-base-200 transition-all hover:border-primary/30">
                             <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
                                 <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
@@ -739,7 +751,7 @@ const CrucibleEditPage: React.FC = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="form-control">
                                     <label className="label pb-1 flex items-center gap-2">
-                                        <MessageSquare size={14} className="text-primary" />
+                                        <Target size={14} className="text-primary" />
                                         <span className="label-text font-medium">Trigger Phrase</span>
                                     </label>
                                     <input 
@@ -747,65 +759,92 @@ const CrucibleEditPage: React.FC = () => {
                                         value={newAiHint.trigger} 
                                         onChange={e => setNewAiHint({...newAiHint, trigger: e.target.value})} 
                                         className="input input-bordered focus:border-primary focus:ring-1 focus:ring-primary transition-all" 
-                                        placeholder="When user asks about..."
+                                        placeholder="e.g., How do I handle authentication?"
                                     />
+                                    <label className="label pt-1">
+                                        <span className="label-text-alt text-base-content/70">The question or phrase that will trigger this hint</span>
+                                    </label>
                                 </div>
+                                
                                 <div className="form-control">
                                     <label className="label pb-1 flex items-center gap-2">
                                         <MessageSquare size={14} className="text-primary" />
-                                        <span className="label-text font-medium">Content</span>
+                                        <span className="label-text font-medium">Response Content</span>
                                     </label>
                                     <textarea 
                                         value={newAiHint.content} 
                                         onChange={e => setNewAiHint({...newAiHint, content: e.target.value})} 
-                                        className="textarea textarea-bordered focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-y" 
-                                        placeholder="AI should respond with..."
+                                        className="textarea textarea-bordered min-h-[104px] focus:border-primary focus:ring-1 focus:ring-primary transition-all" 
+                                        placeholder="Write a helpful response that guides without giving away the solution..."
                                     />
+                                    <label className="label pt-1">
+                                        <span className="label-text-alt text-base-content/70">The AI's response when triggered</span>
+                                    </label>
                                 </div>
                             </div>
-                            <button 
-                                type="button" 
-                                onClick={handleAddAiHint} 
-                                className="btn btn-primary btn-sm mt-4"
-                                disabled={!newAiHint.trigger || !newAiHint.content}
-                            >
-                                Add AI Hint
-                            </button>
+
+                            <div className="mt-4">
+                                <button 
+                                    type="button" 
+                                    onClick={handleAddAiHint} 
+                                    className="btn btn-primary btn-sm"
+                                    disabled={!newAiHint.trigger || !newAiHint.content}
+                                >
+                                    <Plus size={16} className="mr-1" /> Add Hint
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="overflow-x-auto">
-                            <table className="table table-zebra w-full">
-                                <thead>
-                                    <tr>
-                                        <th>Trigger</th>
-                                        <th>Content</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {formData.aiHints.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={3} className="text-center py-4 text-base-content/70">No AI hints added yet</td>
-                                        </tr>
-                                    ) : (
-                                        formData.aiHints.map((hint, index) => (
-                                            <tr key={index}>
-                                                <td className="truncate max-w-xs">{hint.trigger}</td>
-                                                <td className="truncate max-w-xs">{hint.content}</td>
-                                                <td>
-                                                    <button 
-                                                        type="button" 
-                                                        onClick={() => handleRemoveAiHint(index)} 
-                                                        className="btn btn-ghost btn-xs text-error"
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                </td>
+                        {/* AI Hints List */}
+                        <div className="card bg-base-100 p-6 rounded-xl border border-base-200 transition-all hover:border-primary/30">
+                            <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+                                <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                                    <MessageSquare size={18} />
+                                </div>
+                                AI Hints List
+                            </h2>
+                            
+                            {formData.aiHints.length === 0 ? (
+                                <div className="text-center py-8 text-base-content/70 bg-base-200/30 rounded-lg border border-dashed border-base-300">
+                                    <MessageSquare size={40} className="mx-auto mb-3 opacity-50" />
+                                    <p>No AI hints added yet</p>
+                                    <p className="text-sm mt-1">Add some helpful hints for the AI to assist users</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto rounded-lg border border-base-200">
+                                    <table className="table w-full">
+                                        <thead className="bg-base-200/50">
+                                            <tr>
+                                                <th>Trigger</th>
+                                                <th>Response</th>
+                                                <th className="w-20">Action</th>
                                             </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
+                                        </thead>
+                                        <tbody>
+                                            {formData.aiHints.map((hint, index) => (
+                                                <tr key={index} className="hover">
+                                                    <td className="font-medium">{hint.trigger}</td>
+                                                    <td className="whitespace-pre-wrap">
+                                                        {hint.content.length > 100 
+                                                            ? hint.content.substring(0, 100) + '...' 
+                                                            : hint.content
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => handleRemoveAiHint(index)} 
+                                                            className="btn btn-ghost btn-sm text-error hover:bg-error/10"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -864,45 +903,50 @@ const CrucibleEditPage: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Navigation Footer */}
-                    <div className="flex justify-between mt-8 pt-6 border-t border-base-200">
-                        <div className="flex gap-2">
-                            {activeTab !== tabs[0].id && (
-                                <button 
-                                    type="button" 
-                                    onClick={() => navigateTab('prev')} 
-                                    className="btn btn-outline border-base-300 hover:bg-base-200 hover:border-base-300 gap-2"
-                                >
-                                    <ArrowLeft size={16} /> Previous
-                                </button>
-                            )}
-                            {activeTab !== tabs[tabs.length - 1].id && (
-                                <button 
-                                    type="button" 
-                                    onClick={() => navigateTab('next')} 
-                                    className="btn btn-primary btn-outline gap-2"
-                                >
-                                    Next <ArrowRight size={16} />
-                                </button>
-                            )}
+                    {/* JSON Import Tab */}
+                    <div className={`space-y-4 ${activeTab !== 'json' ? 'hidden' : ''}`}>
+                        <div>
+                            <h2 className="text-base font-medium">Import from JSON</h2>
+                            <p className="text-sm text-base-content/70">Paste JSON exported/generated by AI to prefill this form</p>
                         </div>
-                        
-                        <button 
-                            type="submit" 
-                            className="btn btn-primary gap-2" 
-                            disabled={isSaving}
-                        >
-                            {isSaving ? (
-                                <span className="loading loading-spinner loading-sm" />
-                            ) : (
-                                <>
-                                    <Save size={16} />
-                                    Save Changes
-                                </>
-                            )}
-                        </button>
+                        <Separator />
+                        <textarea 
+                            value={jsonInput} 
+                            onChange={(e) => { setJsonInput(e.target.value); setJsonError(null); }} 
+                            className="textarea textarea-bordered min-h-[260px] font-mono text-xs w-full" 
+                            placeholder="Paste your JSON here"
+                        />
+                        {jsonError && <div className="alert alert-error text-sm">{jsonError}</div>}
+                        <div className="flex gap-2">
+                            <button 
+                                type="button" 
+                                className="btn btn-primary btn-sm"
+                                onClick={() => {
+                                    try {
+                                        const obj = JSON.parse(jsonInput || '{}');
+                                        const next: any = {};
+                                        const keys = ['title','description','thumbnailUrl','category','difficulty','tags','requirements','constraints','expectedOutcome','hints','learningObjectives','prerequisites','userPersona','resources','aiHints','status','estimatedTime','dataAssumptions','edgeCases','relatedResources','subtasks','communityTips','aiPrompts','technicalParameters'];
+                                        keys.forEach(k => { if (obj[k] !== undefined) (next as any)[k] = obj[k]; });
+                                        setFormData(prev => ({ ...prev, ...next }));
+                                        setJsonError(null);
+                                    } catch (e:any) {
+                                        setJsonError(e.message || 'Invalid JSON');
+                                    }
+                                }}
+                            >
+                                Parse & Apply
+                            </button>
+                            <button 
+                                type="button" 
+                                className="btn btn-outline btn-sm"
+                                onClick={() => { setJsonInput(''); setJsonError(null); }}
+                            >
+                                Clear
+                            </button>
+                        </div>
                     </div>
-                    
+
+                    {/* Error and Success Messages */}
                     {saveError && (
                         <div className="alert alert-error mt-4">
                             {saveError}
