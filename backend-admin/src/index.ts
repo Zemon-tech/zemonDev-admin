@@ -8,6 +8,7 @@ import crucibleRoutes from './api/crucible.routes';
 import knowledgeBaseRoutes from './api/knowledgeBase.routes';
 import arenaChannelRoutes from './api/arenaChannel.routes';
 import notificationRoutes from './api/notification.routes';
+import dashboardRoutes from './api/dashboard.routes';
 import errorHandler from './middleware/error.middleware';
 
 // Import all models to ensure they are registered with Mongoose
@@ -41,6 +42,7 @@ app.use('/api/crucible', crucibleRoutes);
 app.use('/api/admin/knowledge-base/documents', knowledgeBaseRoutes);
 app.use('/api', arenaChannelRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 const PORT = process.env.PORT || 5001;
 
