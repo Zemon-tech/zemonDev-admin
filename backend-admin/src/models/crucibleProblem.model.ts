@@ -15,6 +15,11 @@ interface ICommunityTip {
   author: string;
 }
 
+interface IRequirement {
+  requirement: string;
+  context: string;
+}
+
 export interface ICrucibleProblem extends Document {
   title: string;
   description: string;
@@ -23,8 +28,8 @@ export interface ICrucibleProblem extends Document {
   difficulty: 'easy' | 'medium' | 'hard' | 'expert';
   tags: string[];
   requirements: {
-    functional: string[];
-    nonFunctional: string[];
+    functional: IRequirement[];
+    nonFunctional: IRequirement[];
   };
   constraints: string[];
   expectedOutcome: string;
@@ -84,14 +89,14 @@ const CrucibleProblemSchema: Schema = new Schema(
       default: [],
     },
     requirements: {
-      functional: {
-        type: [String],
-        default: [],
-      },
-      nonFunctional: {
-        type: [String],
-        default: [],
-      },
+      functional: [{
+        requirement: { type: String, required: true },
+        context: { type: String, default: '' }
+      }],
+      nonFunctional: [{
+        requirement: { type: String, required: true },
+        context: { type: String, default: '' }
+      }],
     },
     constraints: {
       type: [String],

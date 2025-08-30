@@ -76,6 +76,30 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
             technicalParameters
         } = req.body;
         
+        // Validate requirements structure
+        const validateRequirements = (reqs: any) => {
+            if (!reqs || typeof reqs !== 'object') return false;
+            
+            const validateArray = (arr: any[]) => {
+                if (!Array.isArray(arr)) return false;
+                return arr.every(item => 
+                    item && typeof item === 'object' && 
+                    typeof item.requirement === 'string' && 
+                    item.requirement.trim() !== '' &&
+                    typeof item.context === 'string'
+                );
+            };
+            
+            return validateArray(reqs.functional || []) && validateArray(reqs.nonFunctional || []);
+        };
+        
+        if (requirements && !validateRequirements(requirements)) {
+            res.status(400).json({ 
+                message: 'Invalid requirements structure. Each requirement must have a "requirement" field (required) and a "context" field (optional).' 
+            });
+            return;
+        }
+        
         // Find the user by clerkId first
         const user = await User.findOne({ clerkId: req.auth.userId });
         if (!user) {
@@ -152,6 +176,32 @@ export const updateProblem = async (req: Request, res: Response, next: NextFunct
             aiPrompts,
             technicalParameters
         } = req.body;
+        
+        // Validate requirements structure if provided
+        if (requirements !== undefined) {
+            const validateRequirements = (reqs: any) => {
+                if (!reqs || typeof reqs !== 'object') return false;
+                
+                const validateArray = (arr: any[]) => {
+                    if (!Array.isArray(arr)) return false;
+                    return arr.every(item => 
+                        item && typeof item === 'object' && 
+                        typeof item.requirement === 'string' && 
+                        item.requirement.trim() !== '' &&
+                        typeof item.context === 'string'
+                    );
+                };
+                
+                return validateArray(reqs.functional || []) && validateArray(reqs.nonFunctional || []);
+            };
+            
+            if (!validateRequirements(requirements)) {
+                res.status(400).json({ 
+                    message: 'Invalid requirements structure. Each requirement must have a "requirement" field (required) and a "context" field (optional).' 
+                });
+                return;
+            }
+        }
         
         const problem = await CrucibleProblem.findById(req.params.id);
         if (problem) {

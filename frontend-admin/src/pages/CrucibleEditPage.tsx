@@ -58,6 +58,37 @@ const CrucibleEditPage: React.FC = () => {
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [jsonInput, setJsonInput] = useState('');
     const [jsonError, setJsonError] = useState<string | null>(null);
+    const [showAiPrompt, setShowAiPrompt] = useState(false);
+
+    // Function to normalize requirements data (handle both old and new formats)
+    const normalizeRequirements = (requirements: any) => {
+        if (!requirements) return { functional: [], nonFunctional: [] };
+        
+        const normalizeArray = (arr: any[]): { requirement: string; context: string }[] => {
+            if (!Array.isArray(arr)) return [];
+            
+            return arr.map(item => {
+                if (typeof item === 'string') {
+                    // Old format: string array
+                    return { requirement: item, context: '' };
+                } else if (item && typeof item === 'object' && 'requirement' in item) {
+                    // New format: object with requirement and context
+                    return {
+                        requirement: item.requirement || '',
+                        context: item.context || ''
+                    };
+                } else {
+                    // Fallback
+                    return { requirement: String(item), context: '' };
+                }
+            });
+        };
+
+        return {
+            functional: normalizeArray(requirements.functional || []),
+            nonFunctional: normalizeArray(requirements.nonFunctional || [])
+        };
+    };
 
     const tabs = [
         { id: 'basic', label: 'Basic Info', icon: <FileText size={16} /> },
@@ -79,7 +110,7 @@ const CrucibleEditPage: React.FC = () => {
                     category: data.category || 'algorithms',
                     difficulty: data.difficulty || 'medium',
                     tags: data.tags || [],
-                    requirements: data.requirements || { functional: [], nonFunctional: [] },
+                    requirements: normalizeRequirements(data.requirements),
                     constraints: data.constraints || [],
                     expectedOutcome: data.expectedOutcome || '',
                     hints: data.hints || [],
@@ -179,9 +210,29 @@ const CrucibleEditPage: React.FC = () => {
     };
 
     const handleRequirementChange = (type: 'functional' | 'nonFunctional', value: string) => {
+        // Parse the input to extract requirements and context
+        const lines = value.split('\n').filter(Boolean);
+        const requirements = lines.map(line => {
+            // Check if line contains context (separated by | or : or -)
+            const separator = line.includes('|') ? '|' : line.includes(':') ? ':' : line.includes('-') ? '-' : null;
+            
+            if (separator) {
+                const parts = line.split(separator).map(part => part.trim());
+                return {
+                    requirement: parts[0],
+                    context: parts.slice(1).join(separator).trim()
+                };
+            } else {
+                return {
+                    requirement: line.trim(),
+                    context: ''
+                };
+            }
+        });
+        
         setFormData(prev => ({
             ...prev,
-            requirements: { ...prev.requirements, [type]: value.split('\n').filter(Boolean) }
+            requirements: { ...prev.requirements, [type]: requirements }
         }));
     };
 
@@ -514,10 +565,10 @@ const CrucibleEditPage: React.FC = () => {
                                     <Layers size={60} className="text-primary/10" />
                                 </div>
                                 <textarea 
-                                    value={formData.requirements.functional.join('\n')} 
+                                    value={formData.requirements.functional.map(req => `${req.requirement}${req.context ? ` | ${req.context}` : ''}`).join('\n')} 
                                     onChange={e => handleRequirementChange('functional', e.target.value)} 
                                     className="textarea textarea-bordered min-h-[200px] font-mono text-sm w-full focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-y pl-20" 
-                                    placeholder="Enter each requirement on a new line..."
+                                    placeholder="Enter each requirement on a new line (e.g., 'User can add a new task | As a user, I want to add a new task to the list')..."
                                     required
                                 />
                             </div>
@@ -533,10 +584,10 @@ const CrucibleEditPage: React.FC = () => {
                                     <Layers size={60} className="text-primary/10" />
                                 </div>
                                 <textarea 
-                                    value={formData.requirements.nonFunctional.join('\n')} 
+                                    value={formData.requirements.nonFunctional.map(req => `${req.requirement}${req.context ? ` | ${req.context}` : ''}`).join('\n')} 
                                     onChange={e => handleRequirementChange('nonFunctional', e.target.value)} 
                                     className="textarea textarea-bordered min-h-[200px] font-mono text-sm w-full focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-y pl-20" 
-                                    placeholder="Enter each requirement on a new line..."
+                                    placeholder="Enter each requirement on a new line (e.g., 'Application must respond within 500ms | The system should handle 1000 concurrent users')..."
                                 />
                             </div>
                         </div>
@@ -910,11 +961,245 @@ const CrucibleEditPage: React.FC = () => {
                             <p className="text-sm text-base-content/70">Paste JSON exported/generated by AI to prefill this form</p>
                         </div>
                         <Separator />
+                        
+                        {/* AI Prompt Section */}
+                        <div className="bg-base-200 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <div>
+                                    <h3 className="text-sm font-medium">AI Prompt for Problem Generation</h3>
+                                    <p className="text-xs text-base-content/70">Copy this prompt and use it with your AI assistant to generate problem content</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button 
+                                        type="button"
+                                        className="btn btn-ghost btn-xs"
+                                        onClick={(event) => {
+                                            const promptText = `Create a comprehensive coding problem in JSON format with the following structure and field descriptions:
+
+{
+  "title": "Problem title (required)",
+  "description": "Detailed problem description explaining the challenge and context (required)",
+  "thumbnailUrl": "Optional image URL for the problem",
+  "category": "One of: algorithms, system-design, web-development, mobile-development, data-science, devops, frontend, backend",
+  "difficulty": "One of: easy, medium, hard, expert",
+  "tags": ["array", "of", "relevant", "tags"],
+  "requirements": {
+    "functional": [
+      {
+        "requirement": "What the solution must do (required)",
+        "context": "Why this requirement exists or additional context (optional)"
+      }
+    ],
+    "nonFunctional": [
+      {
+        "requirement": "Quality attributes like performance, security, etc. (required)",
+        "context": "Specific details about the quality attribute (optional)"
+      }
+    ]
+  },
+  "constraints": ["Technical or business limitations"],
+  "expectedOutcome": "Clear description of what a successful solution should achieve (required)",
+  "hints": ["Helpful hints for solving the problem"],
+  "learningObjectives": ["What learners should understand after solving"],
+  "prerequisites": [
+    {
+      "name": "Required knowledge or skill",
+      "link": "Optional resource link"
+    }
+  ],
+  "userPersona": {
+    "name": "Target user type",
+    "journey": "User's learning journey context"
+  },
+  "resources": [
+    {
+      "title": "Resource title",
+      "url": "Resource URL",
+      "type": "One of: article, video, documentation, tool, other"
+    }
+  ],
+  "aiHints": [
+    {
+      "trigger": "When to show this hint",
+      "content": "Hint content"
+    }
+  ],
+  "status": "One of: draft, published, archived",
+  "estimatedTime": 120,
+  "dataAssumptions": ["Assumptions about input data"],
+  "edgeCases": ["Edge cases to consider"],
+  "relatedResources": [
+    {
+      "title": "Related resource title",
+      "link": "Resource link"
+    }
+  ],
+  "subtasks": ["Break down into smaller tasks"],
+  "communityTips": [
+    {
+      "content": "Tip from community",
+      "author": "Tip author"
+    }
+  ],
+  "aiPrompts": ["AI prompts for assistance"],
+  "technicalParameters": ["Technical specifications"]
+}
+
+Field Descriptions:
+- title: Clear, concise problem name
+- description: Comprehensive explanation of the problem, including real-world context
+- category: Problem type (algorithms, system-design, etc.)
+- difficulty: Complexity level from easy to expert
+- tags: Keywords for searchability and categorization
+- requirements.functional: What the solution must accomplish (features, behaviors)
+- requirements.nonFunctional: Quality attributes (performance, security, scalability, etc.)
+- constraints: Technical limitations, business rules, or restrictions
+- expectedOutcome: Success criteria and expected results
+- hints: Progressive hints to guide problem-solving
+- learningObjectives: Educational goals and takeaways
+- prerequisites: Required knowledge, skills, or tools
+- userPersona: Target audience and their context
+- resources: Helpful materials, documentation, or tools
+- aiHints: Contextual hints triggered by user actions
+- estimatedTime: Expected time to complete (in minutes)
+- dataAssumptions: Assumptions about input data or environment
+- edgeCases: Boundary conditions and exceptional scenarios
+- subtasks: Logical breakdown of the problem
+- communityTips: Insights from experienced developers
+- aiPrompts: Suggested prompts for AI assistance
+- technicalParameters: Specific technical requirements or specifications
+
+Generate a realistic, well-structured problem that provides clear learning value and practical application.`;
+                                            navigator.clipboard.writeText(promptText);
+                                            // Show a brief success message
+                                            const button = event.target as HTMLButtonElement;
+                                            const originalText = button.textContent;
+                                            button.textContent = 'Copied!';
+                                            button.className = 'btn btn-success btn-xs';
+                                            setTimeout(() => {
+                                                button.textContent = originalText;
+                                                button.className = 'btn btn-ghost btn-xs';
+                                            }, 2000);
+                                        }}
+                                    >
+                                        Copy Prompt
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        className="btn btn-ghost btn-xs"
+                                        onClick={() => setShowAiPrompt(!showAiPrompt)}
+                                    >
+                                        {showAiPrompt ? 'Hide' : 'Show'} Prompt
+                                    </button>
+                                </div>
+                            </div>
+                            {showAiPrompt && (
+                                <div className="bg-base-300 rounded p-3">
+                                    <pre className="text-xs text-base-content whitespace-pre-wrap">{`Create a comprehensive coding problem in JSON format with the following structure and field descriptions:
+
+{
+  "title": "Problem title (required)",
+  "description": "Detailed problem description explaining the challenge and context (required)",
+  "thumbnailUrl": "Optional image URL for the problem",
+  "category": "One of: algorithms, system-design, web-development, mobile-development, data-science, devops, frontend, backend",
+  "difficulty": "One of: easy, medium, hard, expert",
+  "tags": ["array", "of", "relevant", "tags"],
+  "requirements": {
+    "functional": [
+      {
+        "requirement": "What the solution must do (required)",
+        "context": "Why this requirement exists or additional context (optional)"
+      }
+    ],
+    "nonFunctional": [
+      {
+        "requirement": "Quality attributes like performance, security, etc. (required)",
+        "context": "Specific details about the quality attribute (optional)"
+      }
+    ]
+  },
+  "constraints": ["Technical or business limitations"],
+  "expectedOutcome": "Clear description of what a successful solution should achieve (required)",
+  "hints": ["Helpful hints for solving the problem"],
+  "learningObjectives": ["What learners should understand after solving"],
+  "prerequisites": [
+    {
+      "name": "Required knowledge or skill",
+      "link": "Optional resource link"
+    }
+  ],
+  "userPersona": {
+    "name": "Target user type",
+    "journey": "User's learning journey context"
+  },
+  "resources": [
+    {
+      "title": "Resource title",
+      "url": "Resource URL",
+      "type": "One of: article, video, documentation, tool, other"
+    }
+  ],
+  "aiHints": [
+    {
+      "trigger": "When to show this hint",
+      "content": "Hint content"
+    }
+  ],
+  "status": "One of: draft, published, archived",
+  "estimatedTime": 120,
+  "dataAssumptions": ["Assumptions about input data"],
+  "edgeCases": ["Edge cases to consider"],
+  "relatedResources": [
+    {
+      "title": "Related resource title",
+      "link": "Resource link"
+    }
+  ],
+  "subtasks": ["Break down into smaller tasks"],
+  "communityTips": [
+    {
+      "content": "Tip from community",
+      "author": "Tip author"
+    }
+  ],
+  "aiPrompts": ["AI prompts for assistance"],
+  "technicalParameters": ["Technical specifications"]
+}
+
+Field Descriptions:
+- title: Clear, concise problem name
+- description: Comprehensive explanation of the problem, including real-world context
+- category: Problem type (algorithms, system-design, etc.)
+- difficulty: Complexity level from easy to expert
+- tags: Keywords for searchability and categorization
+- requirements.functional: What the solution must accomplish (features, behaviors)
+- requirements.nonFunctional: Quality attributes (performance, security, scalability, etc.)
+- constraints: Technical limitations, business rules, or restrictions
+- expectedOutcome: Success criteria and expected results
+- hints: Progressive hints to guide problem-solving
+- learningObjectives: Educational goals and takeaways
+- prerequisites: Required knowledge, skills, or tools
+- userPersona: Target audience and their context
+- resources: Helpful materials, documentation, or tools
+- aiHints: Contextual hints triggered by user actions
+- estimatedTime: Expected time to complete (in minutes)
+- dataAssumptions: Assumptions about input data or environment
+- edgeCases: Boundary conditions and exceptional scenarios
+- subtasks: Logical breakdown of the problem
+- communityTips: Insights from experienced developers
+- aiPrompts: Suggested prompts for AI assistance
+- technicalParameters: Specific technical requirements or specifications
+
+Generate a realistic, well-structured problem that provides clear learning value and practical application.`}</pre>
+                                </div>
+                            )}
+                        </div>
+                        
                         <textarea 
                             value={jsonInput} 
                             onChange={(e) => { setJsonInput(e.target.value); setJsonError(null); }} 
                             className="textarea textarea-bordered min-h-[260px] font-mono text-xs w-full" 
-                            placeholder="Paste your JSON here"
+                            placeholder="Paste your JSON here..."
                         />
                         {jsonError && <div className="alert alert-error text-sm">{jsonError}</div>}
                         <div className="flex gap-2">
