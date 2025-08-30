@@ -165,74 +165,74 @@ const UserListPage: React.FC = () => {
     <div className="space-y-4">
       {/* Metrics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-1">
-        <Card className="border-primary/20">
-          <CardContent className="p-1.5">
+        <Card className="border-primary/20 !py-2 !px-2">
+          <CardContent className="!p-1">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-bold text-primary">{metrics.totalUsers}</div>
-                <div className="text-xs text-muted-foreground">Total</div>
+                <div className="text-xs font-bold text-primary">{metrics.totalUsers}</div>
+                <div className="text-[10px] text-muted-foreground">Total</div>
               </div>
-              <Users size={12} className="text-primary" />
+              <Users size={10} className="text-primary" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-green-200">
-          <CardContent className="p-1.5">
+        <Card className="border-green-200 !py-2 !px-2">
+          <CardContent className="!p-1">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-bold text-green-600">{metrics.activeUsers}</div>
-                <div className="text-xs text-muted-foreground">Active</div>
+                <div className="text-xs font-bold text-green-600">{metrics.activeUsers}</div>
+                <div className="text-[10px] text-muted-foreground">Active</div>
               </div>
-              <UserCheck size={12} className="text-green-600" />
+              <UserCheck size={10} className="text-green-600" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-red-200">
-          <CardContent className="p-1.5">
+        <Card className="border-red-200 !py-2 !px-2">
+          <CardContent className="!p-1">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-bold text-red-600">{metrics.adminUsers}</div>
-                <div className="text-xs text-muted-foreground">Admins</div>
+                <div className="text-xs font-bold text-red-600">{metrics.adminUsers}</div>
+                <div className="text-[10px] text-muted-foreground">Admins</div>
               </div>
-              <Shield size={12} className="text-red-600" />
+              <Shield size={10} className="text-red-600" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-blue-200">
-          <CardContent className="p-1.5">
+        <Card className="border-blue-200 !py-2 !px-2">
+          <CardContent className="!p-1">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-bold text-blue-600">{metrics.regularUsers}</div>
-                <div className="text-xs text-muted-foreground">Users</div>
+                <div className="text-xs font-bold text-blue-600">{metrics.regularUsers}</div>
+                <div className="text-[10px] text-muted-foreground">Users</div>
               </div>
-              <Users size={12} className="text-blue-600" />
+              <Users size={10} className="text-blue-600" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200">
-          <CardContent className="p-1.5">
+        <Card className="border-gray-200 !py-2 !px-2">
+          <CardContent className="!p-1">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-bold text-gray-600">{metrics.inactiveUsers}</div>
-                <div className="text-xs text-muted-foreground">Inactive</div>
+                <div className="text-xs font-bold text-gray-600">{metrics.inactiveUsers}</div>
+                <div className="text-[10px] text-muted-foreground">Inactive</div>
               </div>
-              <UserX size={12} className="text-gray-600" />
+              <UserX size={10} className="text-gray-600" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-purple-200">
-          <CardContent className="p-1.5">
+        <Card className="border-purple-200 !py-2 !px-2">
+          <CardContent className="!p-1">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-bold text-purple-600">{metrics.recentUsers}</div>
-                <div className="text-xs text-muted-foreground">Recent</div>
+                <div className="text-xs font-bold text-purple-600">{metrics.recentUsers}</div>
+                <div className="text-[10px] text-muted-foreground">Recent</div>
               </div>
-              <Calendar size={12} className="text-purple-600" />
+              <Calendar size={10} className="text-purple-600" />
             </div>
           </CardContent>
         </Card>

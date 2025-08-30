@@ -222,74 +222,74 @@ const CrucibleListPage: React.FC = () => {
         <div className="space-y-4">
             {/* Metrics Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-1">
-                <Card className="border-primary/20">
-                    <CardContent className="p-1.5">
+                <Card className="border-primary/20 !py-2 !px-2">
+                    <CardContent className="!p-1">
                         <div className="flex items-center justify-between">
                             <div>
-                                <div className="text-sm font-bold text-primary">{metrics.totalProblems}</div>
-                                <div className="text-xs text-muted-foreground">Total</div>
+                                <div className="text-xs font-bold text-primary">{metrics.totalProblems}</div>
+                                <div className="text-[10px] text-muted-foreground">Total</div>
                             </div>
-                            <Target size={12} className="text-primary" />
+                            <Target size={10} className="text-primary" />
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="border-green-200">
-                    <CardContent className="p-1.5">
+                <Card className="border-green-200 !py-2 !px-2">
+                    <CardContent className="!p-1">
                         <div className="flex items-center justify-between">
                             <div>
-                                <div className="text-sm font-bold text-green-600">{metrics.publishedProblems}</div>
-                                <div className="text-xs text-muted-foreground">Published</div>
+                                <div className="text-xs font-bold text-green-600">{metrics.publishedProblems}</div>
+                                <div className="text-[10px] text-muted-foreground">Published</div>
                             </div>
-                            <Eye size={12} className="text-green-600" />
+                            <Eye size={10} className="text-green-600" />
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="border-blue-200">
-                    <CardContent className="p-1.5">
+                <Card className="border-blue-200 !py-2 !px-2">
+                    <CardContent className="!p-1">
                         <div className="flex items-center justify-between">
                             <div>
-                                <div className="text-sm font-bold text-blue-600">{metrics.totalViews}</div>
-                                <div className="text-xs text-muted-foreground">Views</div>
+                                <div className="text-xs font-bold text-blue-600">{metrics.totalViews}</div>
+                                <div className="text-[10px] text-muted-foreground">Views</div>
                             </div>
-                            <Eye size={12} className="text-blue-600" />
+                            <Eye size={10} className="text-blue-600" />
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="border-yellow-200">
-                    <CardContent className="p-1.5">
+                <Card className="border-yellow-200 !py-2 !px-2">
+                    <CardContent className="!p-1">
                         <div className="flex items-center justify-between">
                             <div>
-                                <div className="text-sm font-bold text-yellow-600">{metrics.totalAttempts}</div>
-                                <div className="text-xs text-muted-foreground">Attempts</div>
+                                <div className="text-xs font-bold text-yellow-600">{metrics.totalAttempts}</div>
+                                <div className="text-[10px] text-muted-foreground">Attempts</div>
                             </div>
-                            <Users size={12} className="text-yellow-600" />
+                            <Users size={10} className="text-yellow-600" />
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="border-purple-200">
-                    <CardContent className="p-1.5">
+                <Card className="border-purple-200 !py-2 !px-2">
+                    <CardContent className="!p-1">
                         <div className="flex items-center justify-between">
                             <div>
-                                <div className="text-sm font-bold text-purple-600">{metrics.totalSolutions}</div>
-                                <div className="text-xs text-muted-foreground">Solutions</div>
+                                <div className="text-xs font-bold text-purple-600">{metrics.totalSolutions}</div>
+                                <div className="text-[10px] text-muted-foreground">Solutions</div>
                             </div>
-                            <Award size={12} className="text-purple-600" />
+                            <Award size={10} className="text-purple-600" />
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="border-green-200">
-                    <CardContent className="p-1.5">
+                <Card className="border-green-200 !py-2 !px-2">
+                    <CardContent className="!p-1">
                         <div className="flex items-center justify-between">
                             <div>
-                                <div className="text-sm font-bold text-green-600">{metrics.avgSuccessRate}%</div>
-                                <div className="text-xs text-muted-foreground">Success Rate</div>
+                                <div className="text-xs font-bold text-green-600">{metrics.avgSuccessRate}%</div>
+                                <div className="text-[10px] text-muted-foreground">Success Rate</div>
                             </div>
-                            <TrendingUp size={12} className="text-green-600" />
+                            <TrendingUp size={10} className="text-green-600" />
                         </div>
                     </CardContent>
                 </Card>

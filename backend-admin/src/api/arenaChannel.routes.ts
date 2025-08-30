@@ -1,5 +1,5 @@
 import express from 'express';
-import { getChannels, createChannel, deleteChannel, updateChannel } from '../controllers/arenaChannel.controller';
+import { getChannels, createChannel, deleteChannel, updateChannel, getChannelAnalytics } from '../controllers/arenaChannel.controller';
 import { protect } from '../middleware/auth.middleware';
 
 const router = express.Router();
@@ -19,5 +19,9 @@ router.put('/channels/:id', ...protect, updateChannel);
 // DELETE /api/channels/:id - Delete a channel (admin only)
 // @ts-ignore
 router.delete('/channels/:id', ...protect, deleteChannel);
+
+// GET /api/channels/analytics - Get channel analytics (admin only)
+// @ts-ignore
+router.get('/channels/analytics', ...protect, getChannelAnalytics);
 
 export default router; 

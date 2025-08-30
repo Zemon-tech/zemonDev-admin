@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import ArenaChannel from '../models/arenaChannel.model';
+import ArenaMessage from '../models/arenaMessage.model';
+import UserChannelStatus from '../models/userChannelStatus.model';
 
 // @desc    Get all channels
 // @route   GET /api/channels
@@ -87,6 +89,114 @@ export const updateChannel = async (req: Request, res: Response, next: NextFunct
       return;
     }
     res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get channel analytics and statistics
+// @route   GET /api/channels/analytics
+// @access  Private/Admin
+export const getChannelAnalytics = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    // Get total channels
+    const totalChannels = await ArenaChannel.countDocuments();
+    
+    // Get channels by type
+    const channelsByType = await ArenaChannel.aggregate([
+      {
+        $group: {
+          _id: '$type',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    // Get channels by group
+    const channelsByGroup = await ArenaChannel.aggregate([
+      {
+        $group: {
+          _id: '$group',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    // Get channels by status
+    const activeChannels = await ArenaChannel.countDocuments({ isActive: true });
+    const inactiveChannels = await ArenaChannel.countDocuments({ isActive: false });
+    
+    // Get parent vs child channels
+    const parentChannels = await ArenaChannel.countDocuments({ parentChannelId: null });
+    const childChannels = await ArenaChannel.countDocuments({ parentChannelId: { $ne: null } });
+    
+    // Get total moderators across all channels
+    const totalModerators = await ArenaChannel.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalModerators: { $sum: { $size: '$moderators' } }
+        }
+      }
+    ]);
+    
+    // Get recent channels (last 30 days)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const recentChannels = await ArenaChannel.countDocuments({
+      createdAt: { $gte: thirtyDaysAgo }
+    });
+    
+    // Get channels with most activity (message count)
+    const channelsWithMessageCounts = await ArenaMessage.aggregate([
+      {
+        $group: {
+          _id: '$channelId',
+          messageCount: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { messageCount: -1 }
+      },
+      {
+        $limit: 10
+      }
+    ]);
+    
+    // Get user engagement per channel
+    const userEngagement = await UserChannelStatus.aggregate([
+      {
+        $group: {
+          _id: '$channelId',
+          uniqueUsers: { $addToSet: '$userId' }
+        }
+      },
+      {
+        $project: {
+          channelId: 1,
+          userCount: { $size: '$uniqueUsers' }
+          }
+        },
+        {
+          $sort: { userCount: -1 }
+        },
+        {
+          $limit: 10
+        }
+      ]);
+    
+    res.json({
+      totalChannels,
+      channelsByType,
+      channelsByGroup,
+      activeChannels,
+      inactiveChannels,
+      parentChannels,
+      childChannels,
+      totalModerators: totalModerators[0]?.totalModerators || 0,
+      recentChannels,
+      channelsWithMessageCounts,
+      userEngagement
+    });
   } catch (error) {
     next(error);
   }
