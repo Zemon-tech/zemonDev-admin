@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Edit, Trash2, Plus, Search, Target, Clock, Users, TrendingUp, Eye, Award, Heart, BarChart3, ChevronDown, ChevronUp, Image, Star, BookOpen } from 'lucide-react';
+import { Edit, Trash2, Plus, Search, TrendingUp, Eye, Heart, BarChart3, ChevronDown, ChevronUp, Image, Star, BookOpen, Link as LinkIcon } from 'lucide-react';
 import { useApi } from '../lib/api';
 import { useUIChrome } from '../components/layout/UIChromeContext';
 import { Card, CardContent } from '../components/ui/card';
@@ -335,7 +335,7 @@ const ForgeListPage: React.FC = () => {
                                                         </div>
                                                         {resource.url && (
                                                             <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                                                                <Link size={12} />
+                                                                <LinkIcon size={12} />
                                                                 {resource.url.length > 30 ? resource.url.substring(0, 30) + '...' : resource.url}
                                                             </div>
                                                         )}

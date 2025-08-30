@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Edit, Trash2, Plus, Search, Users, UserCheck, UserX, Shield, Mail, Calendar, BarChart3, ChevronDown, ChevronUp, Image, TrendingUp } from 'lucide-react';
+import { Edit, Trash2, Plus, Search, Users, UserCheck, UserX, Shield, Mail, Calendar, BarChart3, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
 import { useApi } from '../lib/api';
 import { useUIChrome } from '../components/layout/UIChromeContext';
 import { Card, CardContent } from '../components/ui/card';
