@@ -35,13 +35,17 @@ const NotificationsPage: React.FC = () => {
   const notificationApi = useNotificationApi();
   const apiFetch = useApi();
   const { setNavbarTitle, setNavbarActions } = useUIChrome();
-  const [groupedNotifications, setGroupedNotifications] = useState<GroupedNotification[]>([]);
+  const [notificationsByDate, setNotificationsByDate] = useState<{ [date: string]: GroupedNotification[] }>({});
   const [stats, setStats] = useState<NotificationStats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
+    endDate: new Date().toISOString().split('T')[0], // today
+  });
   const [filters, setFilters] = useState({
     type: 'all',
     isRead: undefined as boolean | undefined,
@@ -66,7 +70,7 @@ const NotificationsPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [currentPage, filters]);
+  }, [currentPage, filters, dateRange]);
 
   useEffect(() => {
     setNavbarTitle(
@@ -107,37 +111,48 @@ const NotificationsPage: React.FC = () => {
     };
   }, []);
 
-  const groupNotifications = (notifications: Notification[]): GroupedNotification[] => {
-    const grouped: { [key: string]: GroupedNotification } = {};
+  const groupNotificationsByDate = (notifications: Notification[]): { [date: string]: GroupedNotification[] } => {
+    const groupedByDate: { [date: string]: GroupedNotification[] } = {};
     
     notifications.forEach(notification => {
-      // Create a unique key for grouping based on content and type
-      const key = `${notification.title}-${notification.message}-${notification.type}-${notification.priority}`;
+      const dateKey = new Date(notification.createdAt).toISOString().split('T')[0];
       
-      if (grouped[key]) {
+      if (!groupedByDate[dateKey]) {
+        groupedByDate[dateKey] = [];
+      }
+      
+      // Find existing group for this notification content
+      const existingGroup = groupedByDate[dateKey].find(group => 
+        group.title === notification.title && 
+        group.message === notification.message && 
+        group.type === notification.type && 
+        group.priority === notification.priority
+      );
+      
+      if (existingGroup) {
         // Add to existing group
-        grouped[key].userCount++;
-        grouped[key].originalNotifications.push(notification);
+        existingGroup.userCount++;
+        existingGroup.originalNotifications.push(notification);
         
         // Add unique users
         if (typeof notification.userId === 'object' && notification.userId) {
-          const existingUser = grouped[key].uniqueUsers.find(u => u._id === (notification.userId as User)._id);
+          const existingUser = existingGroup.uniqueUsers.find(u => u._id === (notification.userId as User)._id);
           if (!existingUser) {
-            grouped[key].uniqueUsers.push(notification.userId as User);
+            existingGroup.uniqueUsers.push(notification.userId as User);
           }
         }
         
         // Update read/archived status
-        if (notification.isRead) grouped[key].isRead = true;
-        if (notification.isArchived) grouped[key].isArchived = true;
+        if (notification.isRead) existingGroup.isRead = true;
+        if (notification.isArchived) existingGroup.isArchived = true;
       } else {
         // Create new group
         const uniqueUsers: User[] = [];
         if (typeof notification.userId === 'object' && notification.userId) {
-          uniqueUsers.push(notification.userId);
+          uniqueUsers.push(notification.userId as User);
         }
         
-        grouped[key] = {
+        const newGroup: GroupedNotification = {
           _id: notification._id,
           title: notification.title,
           message: notification.message,
@@ -151,17 +166,24 @@ const NotificationsPage: React.FC = () => {
           originalNotifications: [notification],
           uniqueUsers
         };
+        
+        groupedByDate[dateKey].push(newGroup);
       }
     });
     
-    // Determine if it's a bulk notification
-    Object.values(grouped).forEach(group => {
-      if (group.userCount > 1) {
-        group.isBulk = true;
-      }
+    // Determine if it's a bulk notification and sort by date
+    Object.keys(groupedByDate).forEach(dateKey => {
+      groupedByDate[dateKey].forEach(group => {
+        if (group.userCount > 1) {
+          group.isBulk = true;
+        }
+      });
+      
+      // Sort groups within each date by creation time
+      groupedByDate[dateKey].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     });
     
-    return Object.values(grouped).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return groupedByDate;
   };
 
   const loadData = async () => {
@@ -171,10 +193,12 @@ const NotificationsPage: React.FC = () => {
       // Prepare filters for API call
       const apiFilters = {
         page: currentPage,
-        limit: 20,
+        limit: 50, // Increased limit for better date-based grouping
         type: filters.type === 'all' ? '' : filters.type,
         isRead: filters.isRead,
         priority: filters.priority === 'all' ? '' : filters.priority,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
       };
 
       const [notificationsData, statsData, usersData] = await Promise.all([
@@ -183,8 +207,8 @@ const NotificationsPage: React.FC = () => {
         apiFetch('/users'),
       ]);
 
-      const grouped = groupNotifications(notificationsData.data.notifications);
-      setGroupedNotifications(grouped);
+      const groupedByDate = groupNotificationsByDate(notificationsData.data.notifications);
+      setNotificationsByDate(groupedByDate);
       setTotalPages(notificationsData.data.totalPages);
       setStats(statsData.data);
       setUsers(usersData);
@@ -258,10 +282,11 @@ const NotificationsPage: React.FC = () => {
   };
 
   const handleCleanup = async () => {
-    if (!confirm('Are you sure you want to cleanup expired notifications?')) return;
+    if (!confirm('Are you sure you want to cleanup old notifications?\n\nThis will:\n• Delete archived notifications older than 30 days\n• Archive read notifications older than 7 days')) return;
     
     try {
-      await notificationApi.cleanupExpiredNotifications();
+      const result = await notificationApi.cleanupExpiredNotifications();
+      alert(`Cleanup completed successfully!\n\n• ${result.data.deletedCount} notifications deleted\n• ${result.data.archivedCount} notifications archived`);
       loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to cleanup notifications');
@@ -390,9 +415,9 @@ const NotificationsPage: React.FC = () => {
                 <div>
                   <div className="text-xs font-bold text-purple-600">{currentPage}</div>
                   <div className="text-[10px] text-muted-foreground">Page</div>
-                </div>
+          </div>
                 <TrendingUp size={10} className="text-purple-600" />
-              </div>
+          </div>
             </CardContent>
           </Card>
 
@@ -402,9 +427,9 @@ const NotificationsPage: React.FC = () => {
                 <div>
                   <div className="text-xs font-bold text-info-600">{totalPages}</div>
                   <div className="text-[10px] text-muted-foreground">Total Pages</div>
-                </div>
+          </div>
                 <Clock size={10} className="text-info-600" />
-              </div>
+          </div>
             </CardContent>
           </Card>
         </div>
@@ -413,6 +438,28 @@ const NotificationsPage: React.FC = () => {
       {/* Filters */}
       <div className="bg-card border rounded-lg p-3">
         <div className="flex flex-col lg:flex-row gap-3 items-end">
+          {/* Date Range Filters */}
+          <div className="flex gap-2">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Start Date</label>
+              <Input 
+                type="date" 
+                value={dateRange.startDate}
+                onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
+                className="w-40"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">End Date</label>
+              <Input 
+                type="date" 
+                value={dateRange.endDate}
+                onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
+                className="w-40"
+              />
+            </div>
+          </div>
+          
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -477,6 +524,7 @@ const NotificationsPage: React.FC = () => {
             variant="outline"
             size="sm"
             className="text-destructive hover:text-destructive"
+            title="Cleanup old notifications (delete archived >30 days, archive read >7 days)"
           >
             <Trash2 size={16} className="mr-1" />
             Cleanup
@@ -484,201 +532,239 @@ const NotificationsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Notifications Table */}
+      {/* Notifications Table - Date Based */}
       <div className="bg-card border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="text-left p-3 font-medium text-sm">Notification</th>
-                <th className="text-left p-3 font-medium text-sm">Recipients</th>
-                <th className="text-left p-3 font-medium text-sm">Type</th>
-                <th className="text-left p-3 font-medium text-sm">Priority</th>
-                <th className="text-left p-3 font-medium text-sm">Status</th>
-                <th className="text-left p-3 font-medium text-sm">Date</th>
-                <th className="text-left p-3 font-medium text-sm w-20">Details</th>
-                <th className="text-left p-3 font-medium text-sm w-32">Actions</th>
+          {Object.keys(notificationsByDate).length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No notifications found matching your filters
+            </div>
+          ) : (
+            Object.entries(notificationsByDate)
+              .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
+              .map(([date, notifications]) => (
+                <div key={date} className="border-b border-muted last:border-b-0">
+                  {/* Date Header */}
+                  <div className="bg-muted/30 px-4 py-3 border-b border-muted">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                          <Clock size={16} />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-base">
+                            {new Date(date).toLocaleDateString('en-US', { 
+                              weekday: 'long', 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            })}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {notifications.length} notification{notifications.length !== 1 ? 's' : ''} • 
+                            {notifications.reduce((sum, n) => sum + n.userCount, 0)} total recipients
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                          {notifications.filter(n => !n.isRead).length} unread
+                        </Badge>
+                        <Badge variant="secondary" className="bg-green-100 text-green-800">
+                          {notifications.filter(n => n.isRead).length} read
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notifications for this date */}
+                  <table className="w-full">
+                    <thead className="bg-muted/20">
+                      <tr>
+                        <th className="text-left p-3 font-medium text-sm">Notification</th>
+                        <th className="text-left p-3 font-medium text-sm">Recipients</th>
+                        <th className="text-left p-3 font-medium text-sm">Type</th>
+                        <th className="text-left p-3 font-medium text-sm">Priority</th>
+                        <th className="text-left p-3 font-medium text-sm">Status</th>
+                        <th className="text-left p-3 font-medium text-sm">Time</th>
+                        <th className="text-left p-3 font-medium text-sm w-20">Details</th>
+                        <th className="text-left p-3 font-medium text-sm w-32">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {groupedNotifications.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-8 text-muted-foreground">
-                    No notifications found matching your filters
-                  </td>
-                </tr>
-              ) : (
-                groupedNotifications.map((notification) => (
-                  <React.Fragment key={notification._id}>
-                    <tr className={`border-t hover:bg-muted/30 transition-colors ${notification.isRead ? 'bg-muted/10' : 'bg-white'}`}>
-                      <td className="p-3">
-                        <div className="max-w-[200px]">
-                          <div className="font-medium flex items-center gap-2" title={notification.title}>
-                            {notification.title.length > 40 ? notification.title.substring(0, 40) + '...' : notification.title}
-                            {notification.isBulk && (
-                              <Badge variant="secondary" className="bg-purple-100 text-purple-800 hover:bg-purple-100 text-xs">
-                                Bulk
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {notification.message.length > 60 ? notification.message.substring(0, 60) + '...' : notification.message}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          <div className="text-sm font-medium">
-                            {notification.userCount} {notification.userCount === 1 ? 'user' : 'users'}
-                          </div>
-                          {notification.isBulk && (
-                            <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs">
-                              <Users size={12} className="mr-1" />
-                              All
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <Badge variant="secondary" className={getTypeBadgeClass(notification.type)}>
-                          {getTypeIcon(notification.type)} {notification.type}
-                        </Badge>
-                      </td>
-                      <td className="p-3">
-                        <Badge variant="secondary" className={getPriorityBadgeClass(notification.priority)}>
-                          {notification.priority}
-                        </Badge>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          {notification.isRead ? (
-                            <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">
-                              <CheckCircle size={12} className="mr-1" />
-                              Read
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-                              <Eye size={12} className="mr-1" />
-                              Unread
-                            </Badge>
-                          )}
-                          {notification.isArchived && (
-                            <Badge variant="secondary" className="bg-gray-100 text-gray-800 hover:bg-gray-100">
-                              <Archive size={12} className="mr-1" />
-                              Archived
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-3 text-sm text-muted-foreground">
-                        {new Date(notification.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="p-3">
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => toggleExpanded(notification._id)}
-                          className="w-full"
-                        >
-                          {expandedNotifications.has(notification._id) ? (
-                            <ChevronUp size={14} />
-                          ) : (
-                            <ChevronDown size={14} />
-                          )}
-                        </Button>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex gap-1">
-                          {!notification.isRead && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleMarkAsRead(notification._id)}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              <CheckCircle size={14} />
-                            </Button>
-                          )}
-                          {!notification.isArchived && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleArchive(notification._id)}
-                              className="text-yellow-600 hover:text-yellow-900"
-                            >
-                              <Archive size={14} />
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDelete(notification._id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 size={14} />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                    {/* Expanded Details Row */}
-                    {expandedNotifications.has(notification._id) && (
-                      <tr>
-                        <td colSpan={8} className="p-0">
-                          <div className="bg-muted/20 border-t border-muted p-4">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                              {/* Notification Details */}
-                              <div>
-                                <h4 className="font-medium mb-3 flex items-center gap-2">
-                                  <MessageSquare size={16} className="text-primary" />
-                                  Notification Details
-                                </h4>
-                                <div className="space-y-2 text-sm">
-                                  <div><strong>Full Title:</strong> {notification.title}</div>
-                                  <div><strong>Message:</strong> {notification.message}</div>
-                                  <div><strong>Type:</strong> 
-                                    <Badge variant="secondary" className={`ml-2 ${getTypeBadgeClass(notification.type)}`}>
-                                      {getTypeIcon(notification.type)} {notification.type}
+                    <tbody>
+              {notifications.map((notification) => (
+                        <React.Fragment key={notification._id}>
+                          <tr className={`border-t hover:bg-muted/30 transition-colors ${notification.isRead ? 'bg-muted/10' : 'bg-white'}`}>
+                            <td className="p-3">
+                              <div className="max-w-[200px]">
+                                <div className="font-medium flex items-center gap-2" title={notification.title}>
+                                  {notification.title.length > 40 ? notification.title.substring(0, 40) + '...' : notification.title}
+                                  {notification.isBulk && (
+                                    <Badge variant="secondary" className="bg-purple-100 text-purple-800 hover:bg-purple-100 text-xs">
+                                      Bulk
                                     </Badge>
-                                  </div>
-                                  <div><strong>Priority:</strong> 
-                                    <Badge variant="secondary" className={`ml-2 ${getPriorityBadgeClass(notification.priority)}`}>
-                                      {notification.priority}
-                                    </Badge>
-                                  </div>
-                                  <div><strong>Created:</strong> {new Date(notification.createdAt).toLocaleString()}</div>
-                                  <div><strong>Total Recipients:</strong> {notification.userCount} users</div>
-                                </div>
-                              </div>
-
-                              {/* Recipients List */}
-                              <div>
-                                <h4 className="font-medium mb-3 flex items-center gap-2">
-                                  <Users size={16} className="text-primary" />
-                                  Recipients ({notification.uniqueUsers.length})
-                                </h4>
-                                <div className="max-h-40 overflow-y-auto space-y-1">
-                                  {notification.uniqueUsers.length > 0 ? (
-                                    notification.uniqueUsers.map((user) => (
-                                      <div key={user._id} className="text-sm p-2 bg-base-100 rounded border">
-                                        <div className="font-medium">{user.fullName}</div>
-                                        <div className="text-muted-foreground">{user.email}</div>
-                                      </div>
-                                    ))
-                                  ) : (
-                                    <div className="text-sm text-muted-foreground">No specific users (bulk notification)</div>
                                   )}
                                 </div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  {notification.message.length > 60 ? notification.message.substring(0, 60) + '...' : notification.message}
+                                </div>
+                    </div>
+                  </td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                <div className="text-sm font-medium">
+                                  {notification.userCount} {notification.userCount === 1 ? 'user' : 'users'}
+                                </div>
+                                {notification.isBulk && (
+                                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs">
+                                    <Users size={12} className="mr-1" />
+                                    All
+                                  </Badge>
+                                )}
                               </div>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))
-              )}
+                  </td>
+                            <td className="p-3">
+                              <Badge variant="secondary" className={getTypeBadgeClass(notification.type)}>
+                      {getTypeIcon(notification.type)} {notification.type}
+                              </Badge>
+                  </td>
+                            <td className="p-3">
+                              <Badge variant="secondary" className={getPriorityBadgeClass(notification.priority)}>
+                      {notification.priority}
+                              </Badge>
+                  </td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                      {notification.isRead ? (
+                                  <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">
+                                    <CheckCircle size={12} className="mr-1" />
+                          Read
+                                  </Badge>
+                      ) : (
+                                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                                    <Eye size={12} className="mr-1" />
+                          Unread
+                                  </Badge>
+                      )}
+                      {notification.isArchived && (
+                                  <Badge variant="secondary" className="bg-gray-100 text-gray-800 hover:bg-gray-100">
+                                    <Archive size={12} className="mr-1" />
+                          Archived
+                                  </Badge>
+                      )}
+                    </div>
+                  </td>
+                            <td className="p-3 text-sm text-muted-foreground">
+                              {new Date(notification.createdAt).toLocaleTimeString()}
+                            </td>
+                            <td className="p-3">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => toggleExpanded(notification._id)}
+                                className="w-full"
+                              >
+                                {expandedNotifications.has(notification._id) ? (
+                                  <ChevronUp size={14} />
+                                ) : (
+                                  <ChevronDown size={14} />
+                                )}
+                              </Button>
+                  </td>
+                            <td className="p-3">
+                              <div className="flex gap-1">
+                      {!notification.isRead && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                          onClick={() => handleMarkAsRead(notification._id)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                                    <CheckCircle size={14} />
+                                  </Button>
+                      )}
+                      {!notification.isArchived && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                          onClick={() => handleArchive(notification._id)}
+                          className="text-yellow-600 hover:text-yellow-900"
+                        >
+                                    <Archive size={14} />
+                                  </Button>
+                      )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                        onClick={() => handleDelete(notification._id)}
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 size={14} />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                          {/* Expanded Details Row */}
+                          {expandedNotifications.has(notification._id) && (
+                            <tr>
+                              <td colSpan={8} className="p-0">
+                                <div className="bg-muted/20 border-t border-muted p-4">
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {/* Notification Details */}
+                                    <div>
+                                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                                        <MessageSquare size={16} className="text-primary" />
+                                        Notification Details
+                                      </h4>
+                                      <div className="space-y-2 text-sm">
+                                        <div><strong>Full Title:</strong> {notification.title}</div>
+                                        <div><strong>Message:</strong> {notification.message}</div>
+                                        <div><strong>Type:</strong> 
+                                          <Badge variant="secondary" className={`ml-2 ${getTypeBadgeClass(notification.type)}`}>
+                                            {getTypeIcon(notification.type)} {notification.type}
+                                          </Badge>
+                                        </div>
+                                        <div><strong>Priority:</strong> 
+                                          <Badge variant="secondary" className={`ml-2 ${getPriorityBadgeClass(notification.priority)}`}>
+                                            {notification.priority}
+                                          </Badge>
+                                        </div>
+                                        <div><strong>Created:</strong> {new Date(notification.createdAt).toLocaleString()}</div>
+                                        <div><strong>Total Recipients:</strong> {notification.userCount} users</div>
+                                      </div>
+                                    </div>
+
+                                    {/* Recipients List */}
+                                    <div>
+                                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                                        <Users size={16} className="text-primary" />
+                                        Recipients ({notification.uniqueUsers.length})
+                                      </h4>
+                                      <div className="max-h-40 overflow-y-auto space-y-1">
+                                        {notification.uniqueUsers.length > 0 ? (
+                                          notification.uniqueUsers.map((user) => (
+                                            <div key={user._id} className="text-sm p-2 bg-base-100 rounded border">
+                                              <div className="font-medium">{user.fullName}</div>
+                                              <div className="text-muted-foreground">{user.email}</div>
+                                            </div>
+                                          ))
+                                        ) : (
+                                          <div className="text-sm text-muted-foreground">No specific users (bulk notification)</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                    </div>
+                  </td>
+                </tr>
+                          )}
+                        </React.Fragment>
+              ))}
             </tbody>
           </table>
+                </div>
+              ))
+          )}
         </div>
       </div>
 
@@ -736,18 +822,18 @@ const NotificationsPage: React.FC = () => {
                   </span>
                   <span className="label-text-alt text-base-content/70">Required</span>
                 </label>
-                <select
-                  value={createForm.userId}
-                  onChange={(e) => setCreateForm({ ...createForm, userId: e.target.value })}
+              <select
+                value={createForm.userId}
+                onChange={(e) => setCreateForm({ ...createForm, userId: e.target.value })}
                   className="select select-bordered w-full focus:border-primary focus:ring-1 focus:ring-primary"
-                >
+              >
                   <option value="">Select a user to notify</option>
-                  {users.map((user) => (
-                    <option key={user._id} value={user._id}>
-                      {user.fullName} ({user.email})
-                    </option>
-                  ))}
-                </select>
+                {users.map((user) => (
+                  <option key={user._id} value={user._id}>
+                    {user.fullName} ({user.email})
+                  </option>
+                ))}
+              </select>
               </div>
 
               {/* Type and Priority Row */}
@@ -759,9 +845,9 @@ const NotificationsPage: React.FC = () => {
                       Type
                     </span>
                   </label>
-                  <select
-                    value={createForm.type}
-                    onChange={(e) => setCreateForm({ ...createForm, type: e.target.value as any })}
+              <select
+                value={createForm.type}
+                onChange={(e) => setCreateForm({ ...createForm, type: e.target.value as any })}
                     className="select select-bordered w-full focus:border-primary focus:ring-1 focus:ring-primary"
                   >
                     <option value="custom">📢 Custom</option>
@@ -772,7 +858,7 @@ const NotificationsPage: React.FC = () => {
                     <option value="resource">🛠️ Resource</option>
                     <option value="project_approval">✅ Project Approval</option>
                     <option value="system">⚙️ System</option>
-                  </select>
+              </select>
                 </div>
                 <div className="form-control">
                   <label className="label pb-2">
@@ -781,16 +867,16 @@ const NotificationsPage: React.FC = () => {
                       Priority
                     </span>
                   </label>
-                  <select
-                    value={createForm.priority}
-                    onChange={(e) => setCreateForm({ ...createForm, priority: e.target.value as any })}
+              <select
+                value={createForm.priority}
+                onChange={(e) => setCreateForm({ ...createForm, priority: e.target.value as any })}
                     className="select select-bordered w-full focus:border-primary focus:ring-1 focus:ring-primary"
                   >
                     <option value="low">🟢 Low</option>
                     <option value="medium">🟡 Medium</option>
                     <option value="high">🟠 High</option>
                     <option value="urgent">🔴 Urgent</option>
-                  </select>
+              </select>
                 </div>
               </div>
 
@@ -803,11 +889,11 @@ const NotificationsPage: React.FC = () => {
                   </span>
                   <span className="label-text-alt text-base-content/70">Required</span>
                 </label>
-                <input
-                  type="text"
+              <input
+                type="text"
                   placeholder="Enter a clear, concise title..."
-                  value={createForm.title}
-                  onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                value={createForm.title}
+                onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
                   className="input input-bordered w-full focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
@@ -821,10 +907,10 @@ const NotificationsPage: React.FC = () => {
                   </span>
                   <span className="label-text-alt text-base-content/70">Required</span>
                 </label>
-                <textarea
+              <textarea
                   placeholder="Write a detailed message for the user..."
-                  value={createForm.message}
-                  onChange={(e) => setCreateForm({ ...createForm, message: e.target.value })}
+                value={createForm.message}
+                onChange={(e) => setCreateForm({ ...createForm, message: e.target.value })}
                   className="textarea textarea-bordered h-24 focus:border-primary focus:ring-1 focus:ring-primary resize-none"
                 />
                 <label className="label pt-1">
@@ -838,14 +924,14 @@ const NotificationsPage: React.FC = () => {
             {/* Footer */}
             <div className="modal-action pt-6 border-t border-base-300">
               <Button 
-                onClick={() => setShowCreateModal(false)} 
+                onClick={() => setShowCreateModal(false)}
                 variant="outline"
                 size="sm"
               >
                 Cancel
               </Button>
               <Button 
-                onClick={handleCreateNotification} 
+                onClick={handleCreateNotification}
                 className="btn-primary"
                 size="sm"
                 disabled={!createForm.userId || !createForm.title || !createForm.message}
@@ -892,9 +978,9 @@ const NotificationsPage: React.FC = () => {
                       Type
                     </span>
                   </label>
-                  <select
-                    value={bulkForm.type}
-                    onChange={(e) => setBulkForm({ ...bulkForm, type: e.target.value as any })}
+              <select
+                value={bulkForm.type}
+                onChange={(e) => setBulkForm({ ...bulkForm, type: e.target.value as any })}
                     className="select select-bordered w-full focus:border-primary focus:ring-1 focus:ring-primary"
                   >
                     <option value="custom">📢 Custom</option>
@@ -905,7 +991,7 @@ const NotificationsPage: React.FC = () => {
                     <option value="resource">🛠️ Resource</option>
                     <option value="project_approval">✅ Project Approval</option>
                     <option value="system">⚙️ System</option>
-                  </select>
+              </select>
                 </div>
                 <div className="form-control">
                   <label className="label pb-2">
@@ -914,16 +1000,16 @@ const NotificationsPage: React.FC = () => {
                       Priority
                     </span>
                   </label>
-                  <select
-                    value={bulkForm.priority}
-                    onChange={(e) => setBulkForm({ ...bulkForm, priority: e.target.value as any })}
+              <select
+                value={bulkForm.priority}
+                onChange={(e) => setBulkForm({ ...bulkForm, priority: e.target.value as any })}
                     className="select select-bordered w-full focus:border-primary focus:ring-1 focus:ring-primary"
                   >
                     <option value="low">🟢 Low</option>
                     <option value="medium">🟡 Medium</option>
                     <option value="high">🟠 High</option>
                     <option value="urgent">🔴 Urgent</option>
-                  </select>
+              </select>
                 </div>
               </div>
 
@@ -936,11 +1022,11 @@ const NotificationsPage: React.FC = () => {
                   </span>
                   <span className="label-text-alt text-base-content/70">Required</span>
                 </label>
-                <input
-                  type="text"
+              <input
+                type="text"
                   placeholder="Enter a clear, concise title for all users..."
-                  value={bulkForm.title}
-                  onChange={(e) => setBulkForm({ ...bulkForm, title: e.target.value })}
+                value={bulkForm.title}
+                onChange={(e) => setBulkForm({ ...bulkForm, title: e.target.value })}
                   className="input input-bordered w-full focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
@@ -954,10 +1040,10 @@ const NotificationsPage: React.FC = () => {
                   </span>
                   <span className="label-text-alt text-base-content/70">Required</span>
                 </label>
-                <textarea
+              <textarea
                   placeholder="Write a message that will be sent to all users..."
-                  value={bulkForm.message}
-                  onChange={(e) => setBulkForm({ ...bulkForm, message: e.target.value })}
+                value={bulkForm.message}
+                onChange={(e) => setBulkForm({ ...bulkForm, message: e.target.value })}
                   className="textarea textarea-bordered h-24 focus:border-primary focus:ring-1 focus:ring-primary resize-none"
                 />
                 <label className="label pt-1">
@@ -993,14 +1079,14 @@ const NotificationsPage: React.FC = () => {
             {/* Footer */}
             <div className="modal-action pt-6 border-t border-base-300">
               <Button 
-                onClick={() => setShowBulkModal(false)} 
+                onClick={() => setShowBulkModal(false)}
                 variant="outline"
                 size="sm"
               >
                 Cancel
               </Button>
               <Button 
-                onClick={handleCreateBulkNotification} 
+                onClick={handleCreateBulkNotification}
                 className="btn-success"
                 size="sm"
                 disabled={!bulkForm.title || !bulkForm.message}

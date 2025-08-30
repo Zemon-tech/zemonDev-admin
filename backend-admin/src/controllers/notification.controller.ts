@@ -209,7 +209,7 @@ export const createBulkNotifications = asyncHandler(async (req: Request, res: Re
   });
 });
 
-// @desc    Clean up expired notifications (admin only)
+// @desc    Clean up expired and old notifications (admin only)
 // @route   DELETE /api/notifications/cleanup
 // @access  Private/Admin
 export const cleanupExpiredNotifications = asyncHandler(async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -222,6 +222,7 @@ export const cleanupExpiredNotifications = asyncHandler(async (req: Request, res
   res.json({
     success: true,
     data: result,
+    message: `Cleanup completed: ${result.deletedCount} notifications deleted, ${result.archivedCount} notifications archived`,
   });
 });
 
@@ -240,6 +241,8 @@ export const getAllNotifications = asyncHandler(async (req: Request, res: Respon
   const priority = req.query.priority as string;
   const isRead = req.query.isRead === 'true' ? true : req.query.isRead === 'false' ? false : undefined;
   const isArchived = req.query.isArchived === 'true' ? true : req.query.isArchived === 'false' ? false : undefined;
+  const startDate = req.query.startDate as string;
+  const endDate = req.query.endDate as string;
 
   const filters = {
     page,
@@ -249,6 +252,8 @@ export const getAllNotifications = asyncHandler(async (req: Request, res: Respon
     priority,
     isRead,
     isArchived,
+    startDate,
+    endDate,
   };
 
   const result = await NotificationService.getAllNotifications(filters);

@@ -281,15 +281,33 @@ export class NotificationService {
   }
 
   /**
-   * Clean up expired notifications
+   * Clean up expired and old notifications
    */
-  static async cleanupExpiredNotifications(): Promise<{ deletedCount: number }> {
+  static async cleanupExpiredNotifications(): Promise<{ deletedCount: number; archivedCount: number }> {
     try {
-      const result = await Notification.deleteMany({
-        expiresAt: { $lt: new Date() },
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      // Delete notifications older than 30 days
+      const deleteResult = await Notification.deleteMany({
+        createdAt: { $lt: thirtyDaysAgo },
+        isArchived: true, // Only delete archived notifications
       });
 
-      return { deletedCount: result.deletedCount || 0 };
+      // Archive read notifications older than 7 days
+      const archiveResult = await Notification.updateMany(
+        {
+          createdAt: { $lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+          isRead: true,
+          isArchived: false,
+        },
+        { isArchived: true }
+      );
+
+      return { 
+        deletedCount: deleteResult.deletedCount || 0,
+        archivedCount: archiveResult.modifiedCount || 0
+      };
     } catch (error) {
       throw error;
     }
@@ -329,6 +347,17 @@ export class NotificationService {
 
       if (filters.isArchived !== undefined) {
         query.isArchived = filters.isArchived;
+      }
+
+      // Add date range filtering
+      if (filters.startDate || filters.endDate) {
+        query.createdAt = {};
+        if (filters.startDate) {
+          query.createdAt.$gte = new Date(filters.startDate);
+        }
+        if (filters.endDate) {
+          query.createdAt.$lte = new Date(filters.endDate + 'T23:59:59.999Z');
+        }
       }
 
       const [notifications, total] = await Promise.all([
