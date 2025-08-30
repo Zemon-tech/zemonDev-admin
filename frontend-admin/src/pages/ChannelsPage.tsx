@@ -767,7 +767,7 @@ const ChannelsPage: React.FC = () => {
                                   </div>
 
                                   {/* Permissions & Actions */}
-                                  <div>
+    <div>
                                     <h4 className="font-medium mb-3 flex items-center gap-2">
                                       <Shield size={16} className="text-primary" />
                                       Permissions & Actions

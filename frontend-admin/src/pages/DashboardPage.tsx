@@ -204,7 +204,7 @@ const DashboardPage: React.FC = () => {
         <Card className="border-success/20 !py-3 !px-3">
           <CardContent className="!p-2">
             <div className="flex items-center justify-between">
-              <div>
+          <div>
                 <div className="text-lg font-bold text-success">{formatNumber(stats.overview.totalNotifications || 0)}</div>
                 <div className="text-xs text-muted-foreground">Notifications</div>
               </div>
@@ -380,7 +380,7 @@ const DashboardPage: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary">{user.role}</Badge>
                         <span className="text-sm font-medium">{user['stats.reputation'] || 0} pts</span>
-                      </div>
+        </div>
                     </div>
                   ))}
                 </div>
@@ -440,8 +440,8 @@ const DashboardPage: React.FC = () => {
                 <div className="text-center">
                   <div className="text-3xl font-bold text-secondary">{stats.crucible.solutions.total || 0}</div>
                   <div className="text-sm text-muted-foreground">Total Solutions</div>
-                </div>
-                
+      </div>
+
                 <div className="space-y-3">
                   <h4 className="font-medium text-sm">By Status</h4>
                   {(stats.crucible.solutions.byStatus || []).map((status) => (
@@ -565,7 +565,7 @@ const DashboardPage: React.FC = () => {
                       </div>
                     </div>
                   ))}
-                </div>
+        </div>
               </CardContent>
             </Card>
           </div>
@@ -643,7 +643,7 @@ const DashboardPage: React.FC = () => {
                       </div>
                     </div>
                   ))}
-                </div>
+        </div>
               </CardContent>
             </Card>
           </div>
@@ -732,8 +732,8 @@ const DashboardPage: React.FC = () => {
                     <span className="text-xs text-muted-foreground">
                       {new Date(stats.systemHealth.lastBackup).toLocaleDateString()}
                     </span>
-                  </div>
-                </div>
+        </div>
+      </div>
               </CardContent>
             </Card>
 
@@ -764,8 +764,8 @@ const DashboardPage: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Middleware</span>
                     <span className="font-medium">5</span>
-                  </div>
-                </div>
+        </div>
+      </div>
               </CardContent>
             </Card>
           </div>
