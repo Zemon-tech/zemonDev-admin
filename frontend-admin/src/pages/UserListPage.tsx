@@ -1,13 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Edit, Trash2, Plus, Search, Users, UserCheck, UserX, Shield, Mail, Calendar, BarChart3, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
+import { Edit, Trash2, Plus, Search, Users, UserCheck, UserX, Shield, Mail, Calendar, BarChart3, ChevronDown, ChevronUp, TrendingUp, Bell, AlertTriangle, MessageSquare } from 'lucide-react';
 import { useApi } from '../lib/api';
+import { useNotificationApi, type CreateNotificationData } from '../lib/notificationApi';
 import { useUIChrome } from '../components/layout/UIChromeContext';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+
+interface IUserStatsDifficultyBucket { solved: number; averageScore: number; totalPoints: number }
+interface IUserStats {
+  problemsSolved?: number;
+  resourcesCreated?: number;
+  reputation?: number;
+  totalPoints?: number;
+  averageScore?: number;
+  highestScore?: number;
+  problemsByDifficulty?: {
+    easy?: IUserStatsDifficultyBucket;
+    medium?: IUserStatsDifficultyBucket;
+    hard?: IUserStatsDifficultyBucket;
+    expert?: IUserStatsDifficultyBucket;
+  };
+  problemsByCategory?: Record<string, IUserStatsDifficultyBucket> | Map<string, IUserStatsDifficultyBucket>;
+}
 
 interface IUser {
   _id: string;
@@ -18,6 +38,7 @@ interface IUser {
   updatedAt?: string;
   lastLogin?: string;
   isActive?: boolean;
+  stats?: IUserStats;
 }
 
 const UserListPage: React.FC = () => {
@@ -29,7 +50,17 @@ const UserListPage: React.FC = () => {
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
+  const [notifyUser, setNotifyUser] = useState<IUser | null>(null);
+  const [notifyForm, setNotifyForm] = useState<CreateNotificationData>({
+    userId: '',
+    type: 'custom',
+    priority: 'medium',
+    title: '',
+    message: '',
+  });
+  const [isSending, setIsSending] = useState(false);
   const apiFetch = useApi();
+  const notificationApi = useNotificationApi();
   const { setNavbarTitle, setNavbarActions } = useUIChrome();
 
   useEffect(() => {
@@ -90,6 +121,23 @@ const UserListPage: React.FC = () => {
       newExpanded.add(userId);
     }
     setExpandedUsers(newExpanded);
+  };
+
+  const openNotifyModal = (user: IUser) => {
+    setNotifyUser(user);
+    setNotifyForm({ userId: user._id, type: 'custom', priority: 'medium', title: '', message: '' });
+  };
+
+  const handleSendNotification = async () => {
+    try {
+      setIsSending(true);
+      await notificationApi.createCustomNotification(notifyForm);
+      setNotifyUser(null);
+    } catch (e) {
+      console.error('Failed to send notification', e);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const filteredUsers = users?.filter(user => {
@@ -382,10 +430,10 @@ const UserListPage: React.FC = () => {
                       {expandedUsers.has(user._id) && (
                         <tr>
                           <td colSpan={9} className="p-0">
-                            <div className="bg-muted/20 border-t border-muted p-4">
-                              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="bg-muted/20 border-t border-muted p-4 lg:p-6">
+                              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
                                 {/* User Details */}
-                                <div>
+                                <div className="lg:col-span-3 bg-card border rounded-lg p-4">
                                   <h4 className="font-medium mb-3 flex items-center gap-2">
                                     <BarChart3 size={16} className="text-primary" />
                                     User Details
@@ -407,7 +455,7 @@ const UserListPage: React.FC = () => {
                                 </div>
 
                                 {/* Analytics */}
-                                <div>
+                                <div className="lg:col-span-6 bg-card border rounded-lg p-4">
                                   <h4 className="font-medium mb-3 flex items-center gap-2">
                                     <TrendingUp size={16} className="text-primary" />
                                     Activity Analytics
@@ -418,10 +466,67 @@ const UserListPage: React.FC = () => {
                                     <div><strong>Recently Active:</strong> {analytics.isRecentlyActive ? 'Yes' : 'No'}</div>
                                     <div><strong>Account Status:</strong> {analytics.status}</div>
                                   </div>
+                                  {/* Performance Summary */}
+                                  <div className="mt-4">
+                                    <h5 className="text-sm font-semibold mb-2">Performance</h5>
+                                    <div className="grid grid-cols-3 gap-2 md:gap-3">
+                                      <div className="bg-base-200 rounded p-2 md:p-3">
+                                        <div className="text-[10px] text-muted-foreground">Total Points</div>
+                                        <div className="text-xs font-bold">{user.stats?.totalPoints ?? 0}</div>
+                                      </div>
+                                      <div className="bg-base-200 rounded p-2 md:p-3">
+                                        <div className="text-[10px] text-muted-foreground">Avg Score</div>
+                                        <div className="text-xs font-bold">{user.stats?.averageScore ?? 0}</div>
+                                      </div>
+                                      <div className="bg-base-200 rounded p-2 md:p-3">
+                                        <div className="text-[10px] text-muted-foreground">High Score</div>
+                                        <div className="text-xs font-bold">{user.stats?.highestScore ?? 0}</div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {/* Difficulty Breakdown */}
+                                  <div className="mt-3">
+                                    <h5 className="text-sm font-semibold mb-2">By Difficulty</h5>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                                      {(['easy','medium','hard','expert'] as const).map((d) => {
+                                        const b = user.stats?.problemsByDifficulty?.[d];
+                                        return (
+                                          <div key={d} className="border rounded p-2 md:p-3">
+                                            <div className="text-[10px] uppercase text-muted-foreground">{d}</div>
+                                            <div className="text-[11px]">Solved: <span className="font-medium">{b?.solved ?? 0}</span></div>
+                                            <div className="text-[11px]">Avg: <span className="font-medium">{b?.averageScore ?? 0}</span></div>
+                                            <div className="text-[11px]">Pts: <span className="font-medium">{b?.totalPoints ?? 0}</span></div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                  {/* Category Breakdown (top 5) */}
+                                  <div className="mt-3">
+                                    <h5 className="text-sm font-semibold mb-2">Top Categories</h5>
+                                    <div className="flex flex-wrap gap-2">
+                                      {(() => {
+                                        const cat = user.stats?.problemsByCategory;
+                                        const entries: Array<[string, IUserStatsDifficultyBucket]> = Array.isArray(cat)
+                                          ? (cat as any) // unlikely
+                                          : cat instanceof Map
+                                            ? Array.from(cat.entries()) as any
+                                            : Object.entries((cat || {}) as Record<string, IUserStatsDifficultyBucket>);
+                                        return entries
+                                          .sort((a, b) => (b[1]?.solved || 0) - (a[1]?.solved || 0))
+                                          .slice(0, 5)
+                                          .map(([k, v]) => (
+                                            <Badge key={k} variant="secondary" className="text-[10px] px-2 py-[2px]">
+                                              {k}: {v?.solved ?? 0} • {v?.averageScore ?? 0}
+                                            </Badge>
+                                          ));
+                                      })()}
+                                    </div>
+                                  </div>
                                 </div>
 
                                 {/* Quick Actions */}
-                                <div>
+                                <div className="lg:col-span-3 bg-card border rounded-lg p-4">
                                   <h4 className="font-medium mb-3 flex items-center gap-2">
                                     <Shield size={16} className="text-primary" />
                                     Quick Actions
@@ -433,7 +538,7 @@ const UserListPage: React.FC = () => {
                                         Edit User
                                       </Link>
                                     </Button>
-                                    <Button size="sm" variant="outline" className="w-full">
+                                    <Button size="sm" variant="outline" className="w-full" onClick={() => openNotifyModal(user)}>
                                       <Mail size={14} className="mr-2" />
                                       Send Message
                                     </Button>
@@ -463,6 +568,96 @@ const UserListPage: React.FC = () => {
             <div className="modal-action">
               <button onClick={() => setUserToDelete(null)} className="btn">Cancel</button>
               <button onClick={handleDelete} className="btn btn-error">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send Notification Modal */}
+      {notifyUser && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-2xl">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-base-300">
+              <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                <Bell size={20} />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Send Notification</h3>
+                <p className="text-sm text-base-content/70">To: {notifyUser.fullName} ({notifyUser.email})</p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="pb-1 inline-flex items-center gap-2 text-sm font-medium">
+                    <MessageSquare size={16} className="text-primary" /> Type
+                  </Label>
+                  <Select value={notifyForm.type as any} onValueChange={(val) => setNotifyForm((prev) => ({ ...prev, type: val as any }))}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[1000]">
+                      <SelectItem value="custom">Custom</SelectItem>
+                      <SelectItem value="hackathon">Hackathon</SelectItem>
+                      <SelectItem value="news">News</SelectItem>
+                      <SelectItem value="channel">Channel</SelectItem>
+                      <SelectItem value="problem">Problem</SelectItem>
+                      <SelectItem value="resource">Resource</SelectItem>
+                      <SelectItem value="project_approval">Project Approval</SelectItem>
+                      <SelectItem value="system">System</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="pb-1 inline-flex items-center gap-2 text-sm font-medium">
+                    <AlertTriangle size={16} className="text-primary" /> Priority
+                  </Label>
+                  <Select value={notifyForm.priority as any} onValueChange={(val) => setNotifyForm((prev) => ({ ...prev, priority: val as any }))}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Priority" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[1000]">
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label className="pb-1 inline-flex items-center gap-2 text-sm font-medium">
+                  <MessageSquare size={16} className="text-primary" /> Title
+                </Label>
+                <Input
+                  type="text"
+                  placeholder="Enter a clear, concise title..."
+                  value={notifyForm.title}
+                  onChange={(e) => setNotifyForm({ ...notifyForm, title: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label className="pb-1 inline-flex items-center gap-2 text-sm font-medium">
+                  <MessageSquare size={16} className="text-primary" /> Message
+                </Label>
+                <Textarea
+                  placeholder="Write a detailed message for the user..."
+                  value={notifyForm.message}
+                  onChange={(e) => setNotifyForm({ ...notifyForm, message: e.target.value })}
+                  className="h-28"
+                />
+              </div>
+            </div>
+
+            <div className="modal-action pt-6 border-t border-base-300">
+              <Button onClick={() => setNotifyUser(null)} variant="outline" size="sm">Cancel</Button>
+              <Button onClick={handleSendNotification} className="btn-primary" size="sm" disabled={isSending || !notifyForm.title || !notifyForm.message}>
+                <Bell size={16} className={`mr-1 ${isSending ? 'animate-spin' : ''}`} />
+                {isSending ? 'Sending...' : 'Send Notification'}
+              </Button>
             </div>
           </div>
         </div>

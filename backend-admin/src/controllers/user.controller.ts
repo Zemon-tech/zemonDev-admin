@@ -2,6 +2,15 @@ import { Request, Response, NextFunction } from 'express';
 import User from '../models/user.model';
 import UserRole from '../models/userRole.model';
 import mongoose from 'mongoose';
+import {
+  getUserSkillSummary,
+  getDashboardSummary,
+  getUserInsights,
+  getNextUpRecommendation,
+  rebuildDailyStatsFromHistory,
+  recomputeLearningPatterns,
+  recomputeRoleMatch,
+} from '../services/userScoring.service';
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -176,3 +185,118 @@ export const getCurrentUser = async (req: Request, res: Response, next: NextFunc
     next(error);
   }
 }; 
+
+// New analytics endpoints
+
+// @desc    Get scoring summary for current user
+// @route   GET /api/users/me/scoring
+// @access  Private/Admin
+export const getUserScoringController = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user || !req.user._id) {
+      res.status(401).json({ success: false, message: 'Not authorized' });
+      return;
+    }
+    const data = await getUserSkillSummary(new mongoose.Types.ObjectId(req.user._id));
+    res.json({ success: true, message: 'User scoring data retrieved successfully', data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get compact dashboard summary
+// @route   GET /api/users/me/dashboard
+// @access  Private/Admin
+export const getUserDashboardController = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user || !req.user._id) {
+      res.status(401).json({ success: false, message: 'Not authorized' });
+      return;
+    }
+    const data = await getDashboardSummary(new mongoose.Types.ObjectId(req.user._id));
+    res.json({ success: true, message: 'Dashboard summary fetched', data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get deep analytics insights
+// @route   GET /api/users/me/insights
+// @access  Private/Admin
+export const getUserInsightsController = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user || !req.user._id) {
+      res.status(401).json({ success: false, message: 'Not authorized' });
+      return;
+    }
+    const data = await getUserInsights(new mongoose.Types.ObjectId(req.user._id));
+    res.json({ success: true, message: 'User insights fetched', data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get next-up recommendation card
+// @route   GET /api/users/me/next-up
+// @access  Private/Admin
+export const getNextUpController = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user || !req.user._id) {
+      res.status(401).json({ success: false, message: 'Not authorized' });
+      return;
+    }
+    const data = await getNextUpRecommendation(new mongoose.Types.ObjectId(req.user._id));
+    res.json({ success: true, message: 'Next-up recommendation fetched', data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Recompute analytics for current user
+// @route   POST /api/users/me/recompute-analytics
+// @access  Private/Admin
+export const recomputeUserAnalyticsController = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user || !req.user._id) {
+      res.status(401).json({ success: false, message: 'Not authorized' });
+      return;
+    }
+    const userId = new mongoose.Types.ObjectId(req.user._id);
+    const daily = await rebuildDailyStatsFromHistory(userId);
+    const patterns = await recomputeLearningPatterns(userId);
+    const role = await recomputeRoleMatch(userId);
+    res.json({ success: true, message: 'Analytics recomputed', data: { dailyStats: daily, learningPatterns: patterns, roleMatch: role } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Set or update active goal for current user
+// @route   POST /api/users/me/goal
+// @access  Private/Admin
+export const setActiveGoalController = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user || !req.user._id) {
+      res.status(401).json({ success: false, message: 'Not authorized' });
+      return;
+    }
+    const { role, title, focusSkills, targetDate } = req.body || {};
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+    user.activeGoal = {
+      role,
+      title,
+      focusSkills: Array.isArray(focusSkills) ? focusSkills : [],
+      startedAt: user.activeGoal?.startedAt || new Date(),
+      targetDate: targetDate ? new Date(targetDate) : user.activeGoal?.targetDate,
+    } as any;
+    await user.save();
+    const roleMatch = await recomputeRoleMatch(new mongoose.Types.ObjectId(req.user._id), role);
+    res.json({ success: true, message: 'Active goal updated', data: { activeGoal: user.activeGoal, roleMatch } });
+  } catch (error) {
+    next(error);
+  }
+};
