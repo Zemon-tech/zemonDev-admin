@@ -1,5 +1,5 @@
 export { ImageUploadField } from './ImageUploadField';
 export { ImageUploadFieldDemo } from './ImageUploadFieldDemo';
-export { ContentPreview } from './ContentPreview';
-export { FullScreenModal } from './FullScreenModal';
-export { HtmlContentRenderer } from './HtmlContentRenderer';
+export { default as ContentPreview } from './ContentPreview';
+export { default as FullScreenModal } from './FullScreenModal';
+export { default as HtmlContentRenderer } from './HtmlContentRenderer';

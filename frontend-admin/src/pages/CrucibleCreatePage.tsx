@@ -11,6 +11,7 @@ import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
 import { Separator } from '../components/ui/separator';
+import { ImageUploadField } from '../components/common/ImageUploadField';
 
 export interface ICrucibleProblemData {
     title: string;
@@ -364,14 +365,20 @@ const CrucibleCreatePage: React.FC = () => {
                             </p>
                         </div>
 
-                        {/* Thumbnail URL and Estimated Time */}
+                        {/* Thumbnail Image and Estimated Time */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="form-control">
-                                <label className="label pb-1 flex items-center gap-2">
-                                    <Link2 size={14} className="text-primary" />
-                                    <span className="label-text font-medium">Thumbnail URL</span>
+                                <ImageUploadField
+                                    value={formData.thumbnailUrl || ''}
+                                    onChange={(url) => setFormData(prev => ({ ...prev, thumbnailUrl: url }))}
+                                    label="Thumbnail Image"
+                                    placeholder="https://..."
+                                    maxSizeKB={500}
+                                    acceptedFormats={['jpg', 'jpeg', 'png', 'gif', 'webp']}
+                                />
+                                <label className="label pt-1">
+                                    <span className="label-text-alt text-base-content/70">Only images (JPG, PNG, GIF, WebP) up to 500KB are allowed</span>
                                 </label>
-                                <Input type="url" name="thumbnailUrl" value={formData.thumbnailUrl || ''} onChange={handleChange} placeholder="https://..." />
                             </div>
                             <div className="form-control">
                                 <label className="label pb-1 flex items-center gap-2">
