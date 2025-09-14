@@ -10,6 +10,7 @@ import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
+import { ImageUploadField } from '../components/common/ImageUploadField';
 
 
 export interface IForgeResourceData {
@@ -92,7 +93,7 @@ const ForgeCreatePage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         // Basic validation
         if (!formData.title.trim()) {
             alert('Please enter a title for the resource');
@@ -110,7 +111,7 @@ const ForgeCreatePage: React.FC = () => {
             alert('Please select a difficulty level');
             return;
         }
-        
+
         setIsSubmitting(true);
         try {
             const response = await apiFetch('/forge', {
@@ -146,14 +147,14 @@ const ForgeCreatePage: React.FC = () => {
         );
         setNavbarActions(
             <div className="flex items-center gap-2">
-                <button 
+                <button
                     type="button"
                     onClick={() => navigate('/admin/forge')}
                     className="btn btn-ghost btn-sm"
                 >
                     Cancel
                 </button>
-                <button 
+                <button
                     type="button"
                     onClick={() => (document.querySelector('#forge-create-form') as HTMLFormElement)?.requestSubmit()}
                     className="btn btn-warning btn-sm"
@@ -205,22 +206,22 @@ const ForgeCreatePage: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-2">
                                 <Label className="inline-flex items-center gap-2 text-sm font-medium">
-                                    <FileText size={14} className="text-warning" /> 
+                                    <FileText size={14} className="text-warning" />
                                     Title <span className="badge badge-xs badge-error">Required</span>
                                 </Label>
-                                <Input 
-                                    name="title" 
-                                    value={formData.title} 
-                                    onChange={handleChange} 
-                                    placeholder="Enter a descriptive title" 
-                                    required 
+                                <Input
+                                    name="title"
+                                    value={formData.title}
+                                    onChange={handleChange}
+                                    placeholder="Enter a descriptive title"
+                                    required
                                 />
                                 <div className="text-xs text-base-content/70">A clear, concise title for the resource</div>
                             </div>
-                            
+
                             <div className="space-y-2">
                                 <Label className="inline-flex items-center gap-2 text-sm font-medium">
-                                    <Type size={14} className="text-warning" /> 
+                                    <Type size={14} className="text-warning" />
                                     Type <span className="badge badge-xs badge-error">Required</span>
                                 </Label>
                                 <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as any }))}>
@@ -240,10 +241,10 @@ const ForgeCreatePage: React.FC = () => {
                                 </Select>
                                 <div className="text-xs text-base-content/70">Select the resource type</div>
                             </div>
-                            
+
                             <div className="space-y-2">
                                 <Label className="inline-flex items-center gap-2 text-sm font-medium">
-                                    <Tag size={14} className="text-warning" /> 
+                                    <Tag size={14} className="text-warning" />
                                     Category
                                 </Label>
                                 <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value as any }))}>
@@ -270,7 +271,7 @@ const ForgeCreatePage: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <Label className="inline-flex items-center gap-2 text-sm font-medium">
-                                    <Sparkles size={14} className="text-warning" /> 
+                                    <Sparkles size={14} className="text-warning" />
                                     Difficulty
                                 </Label>
                                 <RadioGroup value={formData.difficulty} onValueChange={(value) => setFormData(prev => ({ ...prev, difficulty: value as any }))} className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -293,15 +294,15 @@ const ForgeCreatePage: React.FC = () => {
 
                             <div className="space-y-2">
                                 <Label className="inline-flex items-center gap-2 text-sm font-medium">
-                                    <Globe size={14} className="text-warning" /> 
+                                    <Globe size={14} className="text-warning" />
                                     External URL
                                 </Label>
-                                <Input 
-                                    type="url" 
-                                    name="url" 
-                                    value={formData.url} 
-                                    onChange={handleChange} 
-                                    placeholder="https://..." 
+                                <Input
+                                    type="url"
+                                    name="url"
+                                    value={formData.url}
+                                    onChange={handleChange}
+                                    placeholder="https://..."
                                 />
                                 <div className="text-xs text-base-content/70">External link to the resource (optional)</div>
                             </div>
@@ -318,13 +319,13 @@ const ForgeCreatePage: React.FC = () => {
                                 <div className="absolute top-2 left-2 opacity-30 pointer-events-none">
                                     <FileText size={60} className="text-warning/10" />
                                 </div>
-                                <Textarea 
-                                    name="description" 
-                                    value={formData.description} 
-                                    onChange={handleChange} 
-                                    className="min-h-[200px] pl-20" 
-                                    placeholder="Provide a detailed description of the resource..." 
-                                    required 
+                                <Textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleChange}
+                                    className="min-h-[200px] pl-20"
+                                    placeholder="Provide a detailed description of the resource..."
+                                    required
                                 />
                             </div>
                             <p className="text-xs text-base-content/70 mt-2 ml-1">
@@ -332,32 +333,33 @@ const ForgeCreatePage: React.FC = () => {
                             </p>
                         </div>
 
-                        {/* Thumbnail URL and Estimated Time */}
+                        {/* Thumbnail Upload and Estimated Time */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="form-control">
-                                <Label className="label pb-1 flex items-center gap-2">
-                                    <Image size={14} className="text-warning" />
-                                    <span className="label-text font-medium">Thumbnail URL</span>
-                                </Label>
-                                <Input 
-                                    type="url" 
-                                    name="thumbnail" 
-                                    value={formData.thumbnail} 
-                                    onChange={handleChange} 
-                                    placeholder="https://..." 
+                                <ImageUploadField
+                                    value={formData.thumbnail}
+                                    onChange={(url) => setFormData(prev => ({ ...prev, thumbnail: url }))}
+                                    label="Thumbnail Image"
+                                    placeholder="https://..."
+                                    uploadType="forge-thumbnail"
+                                    maxSizeKB={500}
+                                    acceptedFormats={['jpg', 'jpeg', 'png', 'gif', 'webp']}
                                 />
+                                <label className="label pt-1">
+                                    <span className="label-text-alt text-base-content/70">Only images (JPG, PNG, GIF, WebP) up to 500KB are allowed</span>
+                                </label>
                             </div>
                             <div className="form-control">
                                 <Label className="label pb-1 flex items-center gap-2">
                                     <Sparkles size={14} className="text-warning" />
                                     <span className="label-text font-medium">Estimated Time (mins)</span>
                                 </Label>
-                                <Input 
-                                    type="number" 
-                                    name="estimatedTime" 
-                                    value={formData.estimatedTime ?? 0} 
-                                    onChange={(e) => setFormData(prev => ({ ...prev, estimatedTime: Number(e.target.value) }))} 
-                                    min={0} 
+                                <Input
+                                    type="number"
+                                    name="estimatedTime"
+                                    value={formData.estimatedTime ?? 0}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, estimatedTime: Number(e.target.value) }))}
+                                    min={0}
                                 />
                             </div>
                         </div>
@@ -369,7 +371,7 @@ const ForgeCreatePage: React.FC = () => {
                                 <span className="label-text font-medium">Tags</span>
                             </Label>
                             <div className="flex flex-wrap gap-2 mb-2 min-h-[40px] p-2 bg-base-200/50 rounded-md">
-                                {formData.tags.length === 0 && 
+                                {formData.tags.length === 0 &&
                                     <span className="text-base-content/50 text-sm">No tags added yet</span>
                                 }
                                 {formData.tags.map((tag, index) => (
@@ -382,11 +384,11 @@ const ForgeCreatePage: React.FC = () => {
                                 ))}
                             </div>
                             <div className="join w-full mt-2">
-                                <Input 
-                                    type="text" 
-                                    value={tagInput} 
-                                    onChange={(e) => setTagInput(e.target.value)} 
-                                    className="join-item flex-1" 
+                                <Input
+                                    type="text"
+                                    value={tagInput}
+                                    onChange={(e) => setTagInput(e.target.value)}
+                                    className="join-item flex-1"
                                     placeholder="Add relevant tags..."
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
@@ -395,9 +397,9 @@ const ForgeCreatePage: React.FC = () => {
                                         }
                                     }}
                                 />
-                                <Button 
-                                    type="button" 
-                                    onClick={handleAddTag} 
+                                <Button
+                                    type="button"
+                                    onClick={handleAddTag}
                                     className="join-item"
                                     disabled={!tagInput.trim()}
                                 >
@@ -416,7 +418,7 @@ const ForgeCreatePage: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <Label className="inline-flex items-center gap-2 text-sm font-medium">
-                                    <Code size={14} className="text-warning" /> 
+                                    <Code size={14} className="text-warning" />
                                     Content Type
                                 </Label>
                                 <RadioGroup value={formData.contentType} onValueChange={(value) => setFormData(prev => ({ ...prev, contentType: value as any }))} className="grid grid-cols-1 gap-2">
@@ -441,20 +443,20 @@ const ForgeCreatePage: React.FC = () => {
 
                             <div className="space-y-2">
                                 <Label className="inline-flex items-center gap-2 text-sm font-medium">
-                                    <Eye size={14} className="text-warning" /> 
+                                    <Eye size={14} className="text-warning" />
                                     Preview Mode
                                 </Label>
                                 <div className="flex gap-2">
-                                    <Button 
-                                        type="button" 
+                                    <Button
+                                        type="button"
                                         variant={showPreview ? "default" : "outline"}
                                         onClick={() => setShowPreview(true)}
                                         className="flex-1"
                                     >
                                         <Eye size={16} className="mr-2" /> Preview
                                     </Button>
-                                    <Button 
-                                        type="button" 
+                                    <Button
+                                        type="button"
                                         variant={!showPreview ? "default" : "outline"}
                                         onClick={() => setShowPreview(false)}
                                         className="flex-1"
@@ -473,15 +475,15 @@ const ForgeCreatePage: React.FC = () => {
                                 <span className="label-text font-medium">Content</span>
                                 <span className="badge badge-xs badge-error">Required</span>
                             </Label>
-                            
+
                             {showPreview ? (
                                 <div className="min-h-[400px] p-4 bg-base-200/30 rounded-md border border-base-300 overflow-auto">
                                     <div className="prose prose-sm max-w-none">
                                         {formData.contentType === 'markdown' ? (
                                             <div className="markdown-content">
-                                                <div 
+                                                <div
                                                     className="markdown-preview"
-                                                    dangerouslySetInnerHTML={{ 
+                                                    dangerouslySetInnerHTML={{
                                                         __html: formData.content
                                                             .replace(/^### (.*$)/gim, '<h3>$1</h3>')
                                                             .replace(/^## (.*$)/gim, '<h2>$1</h2>')
@@ -495,7 +497,7 @@ const ForgeCreatePage: React.FC = () => {
                                                 />
                                             </div>
                                         ) : formData.contentType === 'html' ? (
-                                            <div 
+                                            <div
                                                 className="html-content"
                                                 dangerouslySetInnerHTML={{ __html: formData.content }}
                                             />
@@ -511,13 +513,13 @@ const ForgeCreatePage: React.FC = () => {
                                     <div className="absolute top-2 left-2 opacity-30 pointer-events-none">
                                         <Code size={60} className="text-warning/10" />
                                     </div>
-                                    <Textarea 
-                                        name="content" 
-                                        value={formData.content} 
-                                        onChange={handleChange} 
-                                        className="min-h-[400px] pl-20 font-mono text-sm" 
+                                    <Textarea
+                                        name="content"
+                                        value={formData.content}
+                                        onChange={handleChange}
+                                        className="min-h-[400px] pl-20 font-mono text-sm"
                                         placeholder={
-                                            formData.contentType === 'markdown' 
+                                            formData.contentType === 'markdown'
                                                 ? `# Resource Title
 
 ## Introduction
@@ -535,9 +537,9 @@ console.log('Hello World');
 \`\`\`
 
 ## Conclusion
-Wrap up your resource...` 
-                                            : formData.contentType === 'html'
-                                            ? `<!DOCTYPE html>
+Wrap up your resource...`
+                                                : formData.contentType === 'html'
+                                                    ? `<!DOCTYPE html>
 <html>
 <head>
     <title>Resource Title</title>
@@ -547,7 +549,7 @@ Wrap up your resource...`
     <p>Your content here...</p>
 </body>
 </html>`
-                                            : `Write your plain text content here...
+                                                    : `Write your plain text content here...
 
 You can include:
 - Bullet points
@@ -557,18 +559,18 @@ You can include:
 
 Make it easy to read and understand.`
                                         }
-                                        required 
+                                        required
                                     />
                                 </div>
                             )}
-                            
+
                             <div className="mt-4 flex items-center justify-between">
                                 <p className="text-xs text-base-content/70">
-                                    {formData.contentType === 'markdown' 
-                                        ? 'Use Markdown syntax for formatting' 
-                                        : formData.contentType === 'html' 
-                                        ? 'Write valid HTML code' 
-                                        : 'Plain text content'
+                                    {formData.contentType === 'markdown'
+                                        ? 'Use Markdown syntax for formatting'
+                                        : formData.contentType === 'html'
+                                            ? 'Write valid HTML code'
+                                            : 'Plain text content'
                                     }
                                 </p>
                                 <div className="text-xs text-base-content/70">
@@ -586,11 +588,11 @@ Make it easy to read and understand.`
                                     </div>
                                     Quick Templates
                                 </h2>
-                                
+
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     {[
-                                        { 
-                                            name: 'Basic Tutorial', 
+                                        {
+                                            name: 'Basic Tutorial',
                                             content: `# Tutorial Title
 
 ## Overview
@@ -614,8 +616,8 @@ Brief description of what this tutorial covers.
 What you learned and next steps.`,
                                             type: 'markdown'
                                         },
-                                        { 
-                                            name: 'Code Template', 
+                                        {
+                                            name: 'Code Template',
                                             content: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -642,8 +644,8 @@ What you learned and next steps.`,
 </html>`,
                                             type: 'html'
                                         },
-                                        { 
-                                            name: 'Cheat Sheet', 
+                                        {
+                                            name: 'Cheat Sheet',
                                             content: `CHEAT SHEET: [Topic Name]
 
 BASIC COMMANDS
@@ -676,10 +678,10 @@ RESOURCES
                                                 if (template.type === formData.contentType) {
                                                     setFormData(prev => ({ ...prev, content: template.content }));
                                                 } else {
-                                                    setFormData(prev => ({ 
-                                                        ...prev, 
+                                                    setFormData(prev => ({
+                                                        ...prev,
                                                         contentType: template.type as any,
-                                                        content: template.content 
+                                                        content: template.content
                                                     }));
                                                 }
                                             }}
