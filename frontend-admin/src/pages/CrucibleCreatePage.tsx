@@ -373,6 +373,7 @@ const CrucibleCreatePage: React.FC = () => {
                                     onChange={(url) => setFormData(prev => ({ ...prev, thumbnailUrl: url }))}
                                     label="Thumbnail Image"
                                     placeholder="https://..."
+                                    uploadType="crucible-thumbnail"
                                     maxSizeKB={500}
                                     acceptedFormats={['jpg', 'jpeg', 'png', 'gif', 'webp']}
                                 />

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../lib/api';
-import { Save, Plus, X, Tag, Flame, FileText, Code, Eye, Type, Image, Globe, Sparkles } from 'lucide-react';
+import { Save, Plus, X, Tag, Flame, FileText, Code, Eye, Type, Globe, Sparkles } from 'lucide-react';
 import { useUIChrome } from '../components/layout/UIChromeContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
