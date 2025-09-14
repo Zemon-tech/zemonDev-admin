@@ -4,6 +4,7 @@ import { Save, X, MessageSquare, FileText, Layers, Sparkles, Book, CheckCircle2,
 import { useApi } from '../lib/api';
 import { useUIChrome } from '../components/layout/UIChromeContext';
 import { Separator } from '../components/ui/separator';
+import { ImageUploadField } from '../components/common/ImageUploadField';
 import type { ICrucibleProblemData } from './CrucibleCreatePage';
 
 const CrucibleEditPage: React.FC = () => {
@@ -443,18 +444,17 @@ const CrucibleEditPage: React.FC = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="form-control">
-                                <label className="label pb-1 flex items-center gap-2">
-                                    <Link2 size={14} className="text-primary" />
-                                    <span className="label-text font-medium">Thumbnail URL</span>
-                                </label>
-                                <input 
-                                    type="url" 
-                                    name="thumbnailUrl" 
-                                    value={formData.thumbnailUrl || ''} 
-                                    onChange={handleChange} 
-                                    className="input input-bordered focus:border-primary focus:ring-1 focus:ring-primary transition-all" 
+                                <ImageUploadField
+                                    value={formData.thumbnailUrl || ''}
+                                    onChange={(url) => setFormData(prev => ({ ...prev, thumbnailUrl: url }))}
+                                    label="Thumbnail Image"
                                     placeholder="https://..."
+                                    maxSizeKB={500}
+                                    acceptedFormats={['jpg', 'jpeg', 'png', 'gif', 'webp']}
                                 />
+                                <label className="label pt-1">
+                                    <span className="label-text-alt text-base-content/70">Only images (JPG, PNG, GIF, WebP) up to 500KB are allowed</span>
+                                </label>
                             </div>
                             <div className="form-control">
                                 <label className="label pb-1 flex items-center gap-2">
