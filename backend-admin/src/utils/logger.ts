@@ -74,28 +74,43 @@ export class Logger {
 
   // Specialized logging methods for upload operations
   public uploadStart(filename: string, fileSize: number, context?: LogContext): void {
-    this.info('Image upload started', {
+    const uploadType = context?.uploadType || 'unknown';
+    const bucket = context?.bucket || 'unknown';
+    
+    this.info(`${uploadType} upload started`, {
       ...context,
       operation: 'upload_start',
       filename,
-      fileSize
+      fileSize,
+      uploadType,
+      bucket
     });
   }
 
   public uploadSuccess(filename: string, url: string, context?: LogContext): void {
-    this.info('Image upload successful', {
+    const uploadType = context?.uploadType || 'unknown';
+    const bucket = context?.bucket || 'unknown';
+    
+    this.info(`${uploadType} upload successful`, {
       ...context,
       operation: 'upload_success',
       filename,
-      url
+      url,
+      uploadType,
+      bucket
     });
   }
 
   public uploadError(filename: string, error: Error, context?: LogContext): void {
-    this.error('Image upload failed', {
+    const uploadType = context?.uploadType || 'unknown';
+    const bucket = context?.bucket || 'unknown';
+    
+    this.error(`${uploadType} upload failed`, {
       ...context,
       operation: 'upload_error',
-      filename
+      filename,
+      uploadType,
+      bucket
     }, error);
   }
 
@@ -135,6 +150,106 @@ export class Logger {
       operation: 'storage_access_validation',
       bucket
     }, error);
+  }
+
+  // Forge-specific logging methods
+  public forgeUploadStart(filename: string, fileSize: number, context?: LogContext): void {
+    this.info('Forge thumbnail upload started', {
+      ...context,
+      operation: 'forge_upload_start',
+      uploadType: 'forge-thumbnail',
+      filename,
+      fileSize,
+      bucket: 'forge-thumbnail-1'
+    });
+  }
+
+  public forgeUploadSuccess(filename: string, url: string, context?: LogContext): void {
+    this.info('Forge thumbnail upload successful', {
+      ...context,
+      operation: 'forge_upload_success',
+      uploadType: 'forge-thumbnail',
+      filename,
+      url,
+      bucket: 'forge-thumbnail-1'
+    });
+  }
+
+  public forgeUploadError(filename: string, error: Error, context?: LogContext): void {
+    this.error('Forge thumbnail upload failed', {
+      ...context,
+      operation: 'forge_upload_error',
+      uploadType: 'forge-thumbnail',
+      filename,
+      bucket: 'forge-thumbnail-1'
+    }, error);
+  }
+
+  public forgeReplaceStart(filename: string, oldUrl: string, context?: LogContext): void {
+    this.info('Forge thumbnail replacement started', {
+      ...context,
+      operation: 'forge_replace_start',
+      uploadType: 'forge-thumbnail',
+      filename,
+      oldUrl,
+      bucket: 'forge-thumbnail-1'
+    });
+  }
+
+  public forgeReplaceSuccess(filename: string, newUrl: string, oldUrl: string, context?: LogContext): void {
+    this.info('Forge thumbnail replacement successful', {
+      ...context,
+      operation: 'forge_replace_success',
+      uploadType: 'forge-thumbnail',
+      filename,
+      newUrl,
+      oldUrl,
+      bucket: 'forge-thumbnail-1'
+    });
+  }
+
+  public forgeReplaceError(filename: string, oldUrl: string, error: Error, context?: LogContext): void {
+    this.error('Forge thumbnail replacement failed', {
+      ...context,
+      operation: 'forge_replace_error',
+      uploadType: 'forge-thumbnail',
+      filename,
+      oldUrl,
+      bucket: 'forge-thumbnail-1'
+    }, error);
+  }
+
+  public forgeBucketAccessError(error: Error, context?: LogContext): void {
+    this.error('Forge bucket access failed', {
+      ...context,
+      operation: 'forge_bucket_access_error',
+      bucket: 'forge-thumbnail-1',
+      uploadType: 'forge-thumbnail'
+    }, error);
+  }
+
+  public forgeErrorRecovery(operation: string, error: Error, recoveryAction: string, context?: LogContext): void {
+    this.warn('Forge upload error recovery initiated', {
+      ...context,
+      operation: 'forge_error_recovery',
+      originalOperation: operation,
+      recoveryAction,
+      uploadType: 'forge-thumbnail',
+      bucket: 'forge-thumbnail-1',
+      errorMessage: error.message
+    });
+  }
+
+  public forgeRetryAttempt(operation: string, attempt: number, maxAttempts: number, context?: LogContext): void {
+    this.info(`Forge upload retry attempt ${attempt}/${maxAttempts}`, {
+      ...context,
+      operation: 'forge_retry_attempt',
+      originalOperation: operation,
+      attempt,
+      maxAttempts,
+      uploadType: 'forge-thumbnail',
+      bucket: 'forge-thumbnail-1'
+    });
   }
 
   // Extract request context for logging

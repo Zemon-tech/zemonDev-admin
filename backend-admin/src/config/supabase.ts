@@ -9,6 +9,7 @@ export interface SupabaseConfig {
   anonKey: string;
   serviceRoleKey: string;
   storageBucket: string;
+  forgeBucket: string;
   maxFileSizeKB: number;
   allowedFileTypes: string[];
   uploadTimeoutMs: number;
@@ -19,6 +20,7 @@ export const supabaseConfig: SupabaseConfig = {
   anonKey: process.env.SUPABASE_ANON_KEY || '',
   serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   storageBucket: process.env.SUPABASE_STORAGE_BUCKET || 'crucible-images',
+  forgeBucket: process.env.SUPABASE_FORGE_BUCKET || 'forge-thumbnail-1',
   maxFileSizeKB: parseInt(process.env.MAX_FILE_SIZE_KB || '500'),
   allowedFileTypes: (process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/gif,image/webp').split(','),
   uploadTimeoutMs: parseInt(process.env.UPLOAD_TIMEOUT_MS || '30000')
@@ -131,30 +133,47 @@ export const validateStorageBucketAccess = async (): Promise<boolean> => {
   try {
     const client = createSupabaseServiceClient();
     
-    logger.info('Testing storage bucket access', {
-      operation: 'bucket_access_test',
-      bucket: supabaseConfig.storageBucket
+    logger.info('Testing storage buckets access', {
+      operation: 'buckets_access_test',
+      crucibleBucket: supabaseConfig.storageBucket,
+      forgeBucket: supabaseConfig.forgeBucket
     });
 
-    // Test bucket access by listing files (limit 1 for efficiency)
-    const { data, error } = await client.storage
+    // Test crucible bucket access
+    const { data: crucibleData, error: crucibleError } = await client.storage
       .from(supabaseConfig.storageBucket)
       .list('', { limit: 1 });
 
-    if (error) {
-      logger.storageAccessError(supabaseConfig.storageBucket, error);
+    if (crucibleError) {
+      logger.storageAccessError(supabaseConfig.storageBucket, crucibleError);
       return false;
     }
 
-    logger.info('Storage bucket access validated successfully', {
-      operation: 'bucket_access_test',
-      bucket: supabaseConfig.storageBucket,
-      fileCount: data?.length || 0
+    // Test forge bucket access
+    const { data: forgeData, error: forgeError } = await client.storage
+      .from(supabaseConfig.forgeBucket)
+      .list('', { limit: 1 });
+
+    if (forgeError) {
+      logger.storageAccessError(supabaseConfig.forgeBucket, forgeError);
+      return false;
+    }
+
+    logger.info('Storage buckets access validated successfully', {
+      operation: 'buckets_access_test',
+      crucibleBucket: supabaseConfig.storageBucket,
+      crucibleFileCount: crucibleData?.length || 0,
+      forgeBucket: supabaseConfig.forgeBucket,
+      forgeFileCount: forgeData?.length || 0
     });
 
     return true;
   } catch (error) {
-    logger.storageAccessError(supabaseConfig.storageBucket, error as Error);
+    logger.error('Error validating storage buckets access', {
+      operation: 'buckets_access_test',
+      crucibleBucket: supabaseConfig.storageBucket,
+      forgeBucket: supabaseConfig.forgeBucket
+    }, error as Error);
     return false;
   }
 };

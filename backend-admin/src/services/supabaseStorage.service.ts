@@ -3,6 +3,14 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { FileValidator } from '../utils/fileValidation';
 import { logger, LogContext } from '../utils/logger';
 
+// Bucket mapping for different upload types
+const BUCKET_MAPPING = {
+  'crucible-thumbnail': 'crucible-thumbnail-1',
+  'forge-thumbnail': 'forge-thumbnail-1'
+} as const;
+
+export type UploadType = keyof typeof BUCKET_MAPPING;
+
 export interface StorageUploadResult {
     success: boolean;
     url?: string;
@@ -35,39 +43,104 @@ export class SupabaseStorageService {
     }
 
     /**
+     * Get the appropriate bucket name for a given upload type
+     * @param uploadType - The type of upload (crucible-thumbnail, forge-thumbnail)
+     * @returns The bucket name for the upload type
+     */
+    getBucketForUploadType(uploadType: UploadType): string {
+        const bucket = BUCKET_MAPPING[uploadType];
+        
+        if (!bucket) {
+            logger.error('Invalid upload type provided', {
+                ...this.context,
+                operation: 'get_bucket_for_upload_type',
+                uploadType,
+                availableTypes: Object.keys(BUCKET_MAPPING)
+            });
+            throw new Error(`Invalid upload type: ${uploadType}`);
+        }
+
+        // Map to actual environment variable values
+        switch (uploadType) {
+            case 'crucible-thumbnail':
+                return supabaseConfig.storageBucket;
+            case 'forge-thumbnail':
+                return supabaseConfig.forgeBucket;
+            default:
+                throw new Error(`Unsupported upload type: ${uploadType}`);
+        }
+    }
+
+    /**
+     * Get upload type from bucket name (reverse mapping)
+     * @param bucket - The bucket name
+     * @returns The upload type for the bucket
+     */
+    private getUploadTypeFromBucket(bucket: string): string {
+        if (bucket === supabaseConfig.forgeBucket) {
+            return 'forge-thumbnail';
+        } else if (bucket === supabaseConfig.storageBucket) {
+            return 'crucible-thumbnail';
+        }
+        return 'unknown';
+    }
+
+    /**
      * Upload image to Supabase storage
      * @param file - File buffer to upload
      * @param filename - Filename to use for storage
+     * @param bucket - Optional bucket name, defaults to instance bucket
      * @returns Promise with upload result containing public URL
      */
-    async uploadImage(file: Buffer, filename: string): Promise<StorageUploadResult> {
+    async uploadImage(file: Buffer, filename: string, bucket?: string): Promise<StorageUploadResult> {
+        const targetBucket = bucket || this.bucket;
+        const uploadType = this.getUploadTypeFromBucket(targetBucket);
         const uploadContext = {
             ...this.context,
             filename,
             fileSize: file.length,
-            bucket: this.bucket,
+            bucket: targetBucket,
+            uploadType,
             contentType: this.getMimeTypeFromFilename(filename)
         };
 
-        logger.uploadStart(filename, file.length, uploadContext);
+        // Use forge-specific logging if this is a forge upload
+        if (uploadType === 'forge-thumbnail') {
+            logger.forgeUploadStart(filename, file.length, uploadContext);
+        } else {
+            logger.uploadStart(filename, file.length, uploadContext);
+        }
 
         try {
             // Upload file to Supabase storage
             const { data, error } = await this.supabase.storage
-                .from(this.bucket)
+                .from(targetBucket)
                 .upload(filename, file, {
                     contentType: this.getMimeTypeFromFilename(filename),
                     upsert: false // Don't overwrite existing files
                 });
 
             if (error) {
-                logger.uploadError(filename, error, {
-                    ...uploadContext,
-                    supabaseError: error.message
-                });
+                const enhancedError = new Error(`Supabase storage error: ${error.message}`);
+                
+                if (uploadType === 'forge-thumbnail') {
+                    logger.forgeUploadError(filename, enhancedError, {
+                        ...uploadContext,
+                        supabaseError: error.message,
+                        errorCode: 'FORGE_BUCKET_ERROR'
+                    });
+                } else {
+                    logger.uploadError(filename, enhancedError, {
+                        ...uploadContext,
+                        supabaseError: error.message
+                    });
+                }
+                
                 return {
                     success: false,
-                    error: 'Failed to upload image to storage'
+                    error: uploadType === 'forge-thumbnail' 
+                        ? 'Failed to upload forge thumbnail to storage'
+                        : 'Failed to upload image to storage'
                 };
             }
 
@@ -78,25 +151,43 @@ export class SupabaseStorageService {
 
             // Get public URL for the uploaded file
             const { data: publicUrlData } = this.supabase.storage
-                .from(this.bucket)
+                .from(targetBucket)
                 .getPublicUrl(filename);
 
             if (!publicUrlData?.publicUrl) {
                 const error = new Error('Failed to generate public URL');
-                logger.uploadError(filename, error, {
-                    ...uploadContext,
-                    step: 'get_public_url'
-                });
+                
+                if (uploadType === 'forge-thumbnail') {
+                    logger.forgeUploadError(filename, error, {
+                        ...uploadContext,
+                        step: 'get_public_url'
+                    });
+                } else {
+                    logger.uploadError(filename, error, {
+                        ...uploadContext,
+                        step: 'get_public_url'
+                    });
+                }
+                
                 return {
                     success: false,
-                    error: 'Failed to generate public URL for uploaded image'
+                    error: uploadType === 'forge-thumbnail'
+                        ? 'Failed to generate public URL for forge thumbnail'
+                        : 'Failed to generate public URL for uploaded image'
                 };
             }
 
-            logger.uploadSuccess(filename, publicUrlData.publicUrl, {
-                ...uploadContext,
-                url: publicUrlData.publicUrl
-            });
+            if (uploadType === 'forge-thumbnail') {
+                logger.forgeUploadSuccess(filename, publicUrlData.publicUrl, {
+                    ...uploadContext,
+                    url: publicUrlData.publicUrl
+                });
+            } else {
+                logger.uploadSuccess(filename, publicUrlData.publicUrl, {
+                    ...uploadContext,
+                    url: publicUrlData.publicUrl
+                });
+            }
 
             return {
                 success: true,
@@ -105,10 +196,17 @@ export class SupabaseStorageService {
             };
 
         } catch (error) {
-            logger.uploadError(filename, error as Error, uploadContext);
+            if (uploadType === 'forge-thumbnail') {
+                logger.forgeUploadError(filename, error as Error, uploadContext);
+            } else {
+                logger.uploadError(filename, error as Error, uploadContext);
+            }
+            
             return {
                 success: false,
-                error: 'Unexpected error occurred during upload'
+                error: uploadType === 'forge-thumbnail'
+                    ? 'Unexpected error occurred during forge thumbnail upload'
+                    : 'Unexpected error occurred during upload'
             };
         }
     }
@@ -116,13 +214,15 @@ export class SupabaseStorageService {
     /**
      * Delete image from Supabase storage
      * @param url - Public URL of the image to delete
+     * @param bucket - Optional bucket name, defaults to instance bucket
      * @returns Promise with deletion result
      */
-    async deleteImage(url: string): Promise<StorageDeleteResult> {
+    async deleteImage(url: string, bucket?: string): Promise<StorageDeleteResult> {
+        const targetBucket = bucket || this.bucket;
         const deleteContext = {
             ...this.context,
             url,
-            bucket: this.bucket
+            bucket: targetBucket
         };
 
         logger.deleteStart(url, deleteContext);
@@ -148,7 +248,7 @@ export class SupabaseStorageService {
             });
 
             const { error } = await this.supabase.storage
-                .from(this.bucket)
+                .from(targetBucket)
                 .remove([filename]);
 
             if (error) {
@@ -187,29 +287,47 @@ export class SupabaseStorageService {
      * @param file - New file buffer to upload
      * @param filename - Filename for the new file
      * @param oldUrl - URL of existing image to replace
+     * @param bucket - Optional bucket name, defaults to instance bucket
      * @returns Promise with upload result
      */
-    async replaceImage(file: Buffer, filename: string, oldUrl: string): Promise<StorageUploadResult> {
+    async replaceImage(file: Buffer, filename: string, oldUrl: string, bucket?: string): Promise<StorageUploadResult> {
+        const targetBucket = bucket || this.bucket;
+        const uploadType = this.getUploadTypeFromBucket(targetBucket);
         const replaceContext = {
             ...this.context,
             operation: 'replace_image',
             filename,
             fileSize: file.length,
             oldUrl,
-            bucket: this.bucket
+            bucket: targetBucket,
+            uploadType
         };
 
-        logger.info('Starting image replacement', replaceContext);
+        if (uploadType === 'forge-thumbnail') {
+            logger.forgeReplaceStart(filename, oldUrl, replaceContext);
+        } else {
+            logger.info('Starting image replacement', replaceContext);
+        }
 
         try {
             // First, upload the new image
-            const uploadResult = await this.uploadImage(file, filename);
+            const uploadResult = await this.uploadImage(file, filename, targetBucket);
 
             if (!uploadResult.success) {
-                logger.error('Image replacement failed during upload', {
-                    ...replaceContext,
-                    uploadError: uploadResult.error
-                });
+                const error = new Error(`Upload failed during replacement: ${uploadResult.error}`);
+                
+                if (uploadType === 'forge-thumbnail') {
+                    logger.forgeReplaceError(filename, oldUrl, error, {
+                        ...replaceContext,
+                        uploadError: uploadResult.error,
+                        step: 'upload_new_image'
+                    });
+                } else {
+                    logger.error('Image replacement failed during upload', {
+                        ...replaceContext,
+                        uploadError: uploadResult.error
+                    });
+                }
                 return uploadResult;
             }
 
@@ -219,29 +337,52 @@ export class SupabaseStorageService {
             });
 
             // Only delete old image if new upload was successful
-            const deleteResult = await this.deleteImage(oldUrl);
+            const deleteResult = await this.deleteImage(oldUrl, targetBucket);
 
             if (!deleteResult.success) {
                 // Log warning but don't fail the operation since new image was uploaded successfully
-                logger.warn('Failed to delete old image during replacement', {
-                    ...replaceContext,
-                    newUrl: uploadResult.url,
-                    deleteError: deleteResult.error
-                });
+                if (uploadType === 'forge-thumbnail') {
+                    logger.warn('Failed to delete old forge thumbnail during replacement', {
+                        ...replaceContext,
+                        newUrl: uploadResult.url,
+                        deleteError: deleteResult.error,
+                        step: 'delete_old_image'
+                    });
+                } else {
+                    logger.warn('Failed to delete old image during replacement', {
+                        ...replaceContext,
+                        newUrl: uploadResult.url,
+                        deleteError: deleteResult.error
+                    });
+                }
             } else {
-                logger.info('Image replacement completed successfully', {
-                    ...replaceContext,
-                    newUrl: uploadResult.url
-                });
+                if (uploadType === 'forge-thumbnail') {
+                    logger.forgeReplaceSuccess(filename, uploadResult.url!, oldUrl, {
+                        ...replaceContext,
+                        newUrl: uploadResult.url
+                    });
+                } else {
+                    logger.info('Image replacement completed successfully', {
+                        ...replaceContext,
+                        newUrl: uploadResult.url
+                    });
+                }
             }
 
             return uploadResult;
 
         } catch (error) {
-            logger.error('Unexpected error during image replacement', replaceContext, error as Error);
+            if (uploadType === 'forge-thumbnail') {
+                logger.forgeReplaceError(filename, oldUrl, error as Error, replaceContext);
+            } else {
+                logger.error('Unexpected error during image replacement', replaceContext, error as Error);
+            }
+            
             return {
                 success: false,
-                error: 'Unexpected error occurred during image replacement'
+                error: uploadType === 'forge-thumbnail'
+                    ? 'Unexpected error occurred during forge thumbnail replacement'
+                    : 'Unexpected error occurred during image replacement'
             };
         }
     }
@@ -316,36 +457,147 @@ export class SupabaseStorageService {
 
     /**
      * Check if storage bucket exists and is accessible
+     * @param bucket - Optional bucket name, defaults to instance bucket
      * @returns Promise with boolean result
      */
-    async validateStorageAccess(): Promise<boolean> {
+    async validateStorageAccess(bucket?: string): Promise<boolean> {
+        const targetBucket = bucket || this.bucket;
         const validationContext = {
             ...this.context,
             operation: 'validate_storage_access',
-            bucket: this.bucket
+            bucket: targetBucket
         };
 
         logger.info('Validating storage bucket access', validationContext);
 
         try {
             const { data, error } = await this.supabase.storage
-                .from(this.bucket)
+                .from(targetBucket)
                 .list('', { limit: 1 });
 
             if (error) {
-                logger.storageAccessError(this.bucket, error);
+                // Use forge-specific error logging if this is the forge bucket
+                if (targetBucket === supabaseConfig.forgeBucket) {
+                    logger.forgeBucketAccessError(error, validationContext);
+                } else {
+                    logger.storageAccessError(targetBucket, error);
+                }
                 return false;
             }
 
             logger.info('Storage bucket access validated successfully', {
                 ...validationContext,
-                fileCount: data?.length || 0
+                fileCount: data?.length || 0,
+                isForgebucket: targetBucket === supabaseConfig.forgeBucket
             });
 
             return true;
         } catch (error) {
-            logger.storageAccessError(this.bucket, error as Error);
+            // Use forge-specific error logging if this is the forge bucket
+            if (targetBucket === supabaseConfig.forgeBucket) {
+                logger.forgeBucketAccessError(error as Error, validationContext);
+            } else {
+                logger.storageAccessError(targetBucket, error as Error);
+            }
             return false;
         }
+    }
+
+    /**
+     * Validate access to all configured buckets
+     * @returns Promise with boolean result indicating if all buckets are accessible
+     */
+    async validateAllBucketsAccess(): Promise<boolean> {
+        const validationContext = {
+            ...this.context,
+            operation: 'validate_all_buckets_access'
+        };
+
+        logger.info('Validating access to all configured buckets', validationContext);
+
+        try {
+            // Validate crucible bucket
+            const crucibleBucketValid = await this.validateStorageAccess(supabaseConfig.storageBucket);
+            
+            // Validate forge bucket
+            const forgeBucketValid = await this.validateStorageAccess(supabaseConfig.forgeBucket);
+
+            const allValid = crucibleBucketValid && forgeBucketValid;
+
+            logger.info('All buckets validation completed', {
+                ...validationContext,
+                crucibleBucket: supabaseConfig.storageBucket,
+                crucibleBucketValid,
+                forgeBucket: supabaseConfig.forgeBucket,
+                forgeBucketValid,
+                allValid
+            });
+
+            return allValid;
+        } catch (error) {
+            logger.error('Error during all buckets validation', validationContext, error as Error);
+            return false;
+        }
+    }
+
+    /**
+     * Attempt to recover from forge upload errors with retry logic
+     * @param operation - The operation that failed
+     * @param error - The original error
+     * @param retryFunction - Function to retry the operation
+     * @param maxRetries - Maximum number of retry attempts
+     * @returns Promise with recovery result
+     */
+    async attemptForgeErrorRecovery<T>(
+        operation: string,
+        error: Error,
+        retryFunction: () => Promise<T>,
+        maxRetries: number = 2
+    ): Promise<T> {
+        const recoveryContext = {
+            ...this.context,
+            operation: 'forge_error_recovery',
+            originalOperation: operation,
+            maxRetries
+        };
+
+        logger.forgeErrorRecovery(operation, error, 'retry_with_backoff', recoveryContext);
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                logger.forgeRetryAttempt(operation, attempt, maxRetries, recoveryContext);
+                
+                // Add exponential backoff delay
+                if (attempt > 1) {
+                    const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s...
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+
+                const result = await retryFunction();
+                
+                logger.info(`Forge error recovery successful on attempt ${attempt}`, {
+                    ...recoveryContext,
+                    successfulAttempt: attempt
+                });
+                
+                return result;
+            } catch (retryError) {
+                logger.warn(`Forge retry attempt ${attempt} failed`, {
+                    ...recoveryContext,
+                    attempt,
+                    retryError: (retryError as Error).message
+                });
+
+                if (attempt === maxRetries) {
+                    logger.error('Forge error recovery failed after all attempts', {
+                        ...recoveryContext,
+                        finalError: (retryError as Error).message
+                    });
+                    throw retryError;
+                }
+            }
+        }
+
+        throw error; // This should never be reached, but TypeScript requires it
     }
 }

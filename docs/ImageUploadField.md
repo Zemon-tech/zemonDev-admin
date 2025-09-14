@@ -32,6 +32,7 @@ function MyForm() {
       required={false}
       maxSizeKB={500}
       acceptedFormats={['jpg', 'jpeg', 'png', 'gif', 'webp']}
+      uploadType="crucible-thumbnail"
     />
   );
 }
@@ -49,6 +50,7 @@ function MyForm() {
 | `maxSizeKB` | `number` | `500` | Maximum file size in KB |
 | `acceptedFormats` | `string[]` | `['jpg', 'jpeg', 'png', 'gif', 'webp']` | Accepted file formats |
 | `className` | `string` | - | Additional CSS classes |
+| `uploadType` | `'crucible-thumbnail' \| 'forge-thumbnail'` | - | **Required.** Specifies which bucket to upload to |
 
 ## Validation
 

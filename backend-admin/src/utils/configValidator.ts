@@ -8,6 +8,7 @@ export interface ConfigValidationResult {
   config: {
     url: string;
     bucket: string;
+    forgeBucket: string;
     maxFileSizeKB: number;
     allowedFileTypes: string[];
     uploadTimeoutMs: number;
@@ -25,6 +26,7 @@ export const validateConfiguration = async (): Promise<ConfigValidationResult> =
     config: {
       url: supabaseConfig.url,
       bucket: supabaseConfig.storageBucket,
+      forgeBucket: supabaseConfig.forgeBucket,
       maxFileSizeKB: supabaseConfig.maxFileSizeKB,
       allowedFileTypes: supabaseConfig.allowedFileTypes,
       uploadTimeoutMs: supabaseConfig.uploadTimeoutMs

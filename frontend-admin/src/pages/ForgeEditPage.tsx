@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, Plus, X, Tag, Flame, FileText, Code, Eye, Type, Image, Globe, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Save, Plus, X, Tag, Flame, FileText, Code, Eye, Type, Globe, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useApi } from '../lib/api';
 import { useUIChrome } from '../components/layout/UIChromeContext';
 import { Button } from '../components/ui/button';
@@ -10,6 +10,7 @@ import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
+import { ImageUploadField } from '../components/common/ImageUploadField';
 
 
 export interface IForgeResourceData {
@@ -381,20 +382,21 @@ const ForgeEditPage: React.FC = () => {
                             </p>
                         </div>
 
-                        {/* Thumbnail URL and Estimated Time */}
+                        {/* Thumbnail Upload and Estimated Time */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="form-control">
-                                <Label className="label pb-1 flex items-center gap-2">
-                                    <Image size={14} className="text-warning" />
-                                    <span className="label-text font-medium">Thumbnail URL</span>
-                                </Label>
-                                <Input 
-                                    type="url" 
-                                    name="thumbnail" 
-                                    value={formData.thumbnail} 
-                                    onChange={handleChange} 
-                                    placeholder="https://..." 
+                                <ImageUploadField
+                                    value={formData.thumbnail}
+                                    onChange={(url) => setFormData(prev => ({ ...prev, thumbnail: url }))}
+                                    label="Thumbnail Image"
+                                    placeholder="https://..."
+                                    uploadType="forge-thumbnail"
+                                    maxSizeKB={500}
+                                    acceptedFormats={['jpg', 'jpeg', 'png', 'gif', 'webp']}
                                 />
+                                <label className="label pt-1">
+                                    <span className="label-text-alt text-base-content/70">Only images (JPG, PNG, GIF, WebP) up to 500KB are allowed</span>
+                                </label>
                             </div>
                             <div className="form-control">
                                 <Label className="label pb-1 flex items-center gap-2">

@@ -15,6 +15,7 @@ interface ImageUploadFieldProps {
     maxSizeKB?: number;
     acceptedFormats?: string[];
     className?: string;
+    uploadType: 'crucible-thumbnail' | 'forge-thumbnail';
 }
 
 const DEFAULT_MAX_SIZE_KB = 500;
@@ -37,7 +38,8 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
     required = false,
     maxSizeKB = DEFAULT_MAX_SIZE_KB,
     acceptedFormats = DEFAULT_ACCEPTED_FORMATS,
-    className
+    className,
+    uploadType
 }) => {
     const [isDragOver, setIsDragOver] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -83,7 +85,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
         try {
             const formData = new FormData();
             formData.append('image', file);
-            formData.append('type', 'crucible-thumbnail');
+            formData.append('type', uploadType);
 
             // Include existing URL for replacement if present
             if (value) {
@@ -120,7 +122,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
             setIsUploading(false);
             setUploadProgress(0);
         }
-    }, [value, onChange, apiFetch]);
+    }, [value, onChange, apiFetch, uploadType]);
 
     // Handle file selection
     const handleFileSelect = useCallback(async (file: File) => {

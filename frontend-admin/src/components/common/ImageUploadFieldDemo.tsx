@@ -26,6 +26,7 @@ export const ImageUploadFieldDemo: React.FC = () => {
             placeholder="https://example.com/image.jpg"
             required={false}
             maxSizeKB={500}
+            uploadType="crucible-thumbnail"
           />
 
           <div className="divider">Current State</div>

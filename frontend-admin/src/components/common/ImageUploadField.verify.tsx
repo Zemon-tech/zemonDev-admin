@@ -21,6 +21,7 @@ const ImageUploadFieldVerification: React.FC = () => {
           value={value}
           onChange={setValue}
           label="Basic Upload"
+          uploadType="crucible-thumbnail"
         />
       </div>
 
@@ -36,6 +37,7 @@ const ImageUploadFieldVerification: React.FC = () => {
           maxSizeKB={250}
           acceptedFormats={['jpg', 'png']}
           className="border-2 border-dashed border-primary/20 p-4 rounded-lg"
+          uploadType="forge-thumbnail"
         />
       </div>
 

@@ -1,6 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger, Logger } from '../utils/logger';
 
+/**
+ * Get bucket name for upload type (for error context)
+ */
+const getBucketNameForUploadType = (uploadType: string): string => {
+  switch (uploadType) {
+    case 'crucible-thumbnail':
+      return process.env.SUPABASE_CRUCIBLE_BUCKET || 'crucible-images';
+    case 'forge-thumbnail':
+      return process.env.SUPABASE_FORGE_BUCKET || 'forge-thumbnail-1';
+    default:
+      return 'unknown-bucket';
+  }
+};
+
 export interface UploadError extends Error {
   code?: string;
   statusCode?: number;
@@ -18,15 +32,20 @@ export const uploadErrorHandler = (
   next: NextFunction
 ): void => {
   const requestContext = Logger.extractRequestContext(req);
+  const uploadType = (req.body?.type as string) || 'crucible-thumbnail';
+  const bucket = getBucketNameForUploadType(uploadType);
+  
   const errorContext = {
     ...requestContext,
     operation: 'upload_error_handler',
     errorCode: error.code,
     statusCode: error.statusCode,
-    field: error.field
+    field: error.field,
+    uploadType,
+    bucket
   };
 
-  // Log the error with full context
+  // Log the error with full context including bucket information
   logger.error('Upload operation failed', errorContext, error);
 
   // Handle specific error types
@@ -61,27 +80,37 @@ export const uploadErrorHandler = (
 
     case 'STORAGE_ERROR':
       statusCode = 503;
-      errorMessage = 'Storage service temporarily unavailable. Please try again later.';
+      errorMessage = `Storage service temporarily unavailable for ${uploadType} uploads. Please try again later.`;
       break;
 
     case 'NETWORK_ERROR':
       statusCode = 502;
-      errorMessage = 'Network error occurred during upload. Please check your connection and try again.';
+      errorMessage = `Network error occurred during ${uploadType} upload. Please check your connection and try again.`;
       break;
 
     case 'TIMEOUT_ERROR':
       statusCode = 408;
-      errorMessage = 'Upload timeout. Please try uploading a smaller file or check your connection.';
+      errorMessage = `Upload timeout for ${uploadType}. Please try uploading a smaller file or check your connection.`;
       break;
 
     case 'VALIDATION_ERROR':
       statusCode = 400;
-      errorMessage = error.message || 'File validation failed';
+      errorMessage = error.message || `File validation failed for ${uploadType}`;
       break;
 
     case 'SUPABASE_ERROR':
       statusCode = 503;
-      errorMessage = 'Storage service error. Please try again later.';
+      errorMessage = `Storage service error for ${uploadType} uploads. Please try again later.`;
+      break;
+
+    case 'BUCKET_ACCESS_ERROR':
+      statusCode = 503;
+      errorMessage = `Unable to access storage bucket for ${uploadType}. Please contact support.`;
+      break;
+
+    case 'FORGE_BUCKET_ERROR':
+      statusCode = 503;
+      errorMessage = 'Forge thumbnail storage is temporarily unavailable. Please try again later.';
       break;
 
     default:
@@ -119,13 +148,15 @@ export const uploadErrorHandler = (
 };
 
 /**
- * Async wrapper for upload operations with enhanced error handling
+ * Async wrapper for upload operations with enhanced error handling and retry logic
  */
 export const asyncUploadHandler = (
   fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
 ) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const requestContext = Logger.extractRequestContext(req);
+    const uploadType = (req.body?.type as string) || 'crucible-thumbnail';
+    const isForgeUpload = uploadType === 'forge-thumbnail';
     
     logger.info('Starting upload operation', {
       ...requestContext,
@@ -133,14 +164,18 @@ export const asyncUploadHandler = (
       method: req.method,
       url: req.url,
       hasFile: !!req.file,
-      contentType: req.headers['content-type']
+      contentType: req.headers['content-type'],
+      uploadType,
+      isForgeUpload
     });
 
     Promise.resolve(fn(req, res, next))
       .then((result) => {
         logger.info('Upload operation completed successfully', {
           ...requestContext,
-          operation: 'upload_operation_success'
+          operation: 'upload_operation_success',
+          uploadType,
+          isForgeUpload
         });
         return result;
       })
@@ -152,6 +187,11 @@ export const asyncUploadHandler = (
         // Add request context to error
         if (req.file) {
           enhancedError.field = 'image';
+        }
+
+        // Add forge-specific error context
+        if (isForgeUpload) {
+          enhancedError.code = enhancedError.code || 'FORGE_UPLOAD_ERROR';
         }
 
         uploadErrorHandler(enhancedError, req, res, next);

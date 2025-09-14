@@ -451,6 +451,7 @@ const CrucibleEditPage: React.FC = () => {
                                     placeholder="https://..."
                                     maxSizeKB={500}
                                     acceptedFormats={['jpg', 'jpeg', 'png', 'gif', 'webp']}
+                                    uploadType="crucible-thumbnail"
                                 />
                                 <label className="label pt-1">
                                     <span className="label-text-alt text-base-content/70">Only images (JPG, PNG, GIF, WebP) up to 500KB are allowed</span>
