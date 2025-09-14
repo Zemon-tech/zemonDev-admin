@@ -110,7 +110,7 @@ export class FileValidator {
 /**
  * Multer file filter function for image validation
  */
-export const imageFileFilter = (req: Request, file: Express.Multer.File, cb: any) => {
+export const imageFileFilter = (_req: Request, file: Express.Multer.File, cb: any) => {
   const validator = new FileValidator();
   const validation = validator.validateMimeType(file);
   
