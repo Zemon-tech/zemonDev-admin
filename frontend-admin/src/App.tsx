@@ -15,6 +15,9 @@ import KnowledgeBaseNewPage from './pages/KnowledgeBaseNewPage';
 import KnowledgeBaseEditPage from './pages/KnowledgeBaseEditPage';
 import ChannelsPage from './pages/ChannelsPage';
 import NotificationsPage from './pages/NotificationsPage';
+import AcademyPhasesPage from './pages/AcademyPhasesPage';
+import AcademyWeeksPage from './pages/AcademyWeeksPage';
+import AcademyLessonsPage from './pages/AcademyLessonsPage';
 
 function App() {
   return (
@@ -45,6 +48,9 @@ function App() {
                     <Route path="/admin/knowledge-base/edit/:id" element={<KnowledgeBaseEditPage />} />
                     <Route path="/admin/channels" element={<ChannelsPage />} />
                     <Route path="/admin/notifications" element={<NotificationsPage />} />
+                    <Route path="/admin/academy/phases" element={<AcademyPhasesPage />} />
+                    <Route path="/admin/academy/weeks" element={<AcademyWeeksPage />} />
+                    <Route path="/admin/academy/lessons" element={<AcademyLessonsPage />} />
                     <Route path="/" element={<Navigate to="/admin/dashboard" />} />
                   </Route>
                 </Routes>

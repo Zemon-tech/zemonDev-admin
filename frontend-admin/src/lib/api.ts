@@ -33,3 +33,51 @@ export const useApi = () => {
 
   return apiFetch;
 }; 
+
+export const useAcademyApi = () => {
+  const apiFetch = useApi();
+
+  const listPhases = async () => apiFetch('/academy/phases');
+  const getPhase = async (id: string) => apiFetch(`/academy/phases/${id}`);
+  const createPhase = async (data: any) => apiFetch('/academy/phases', { method: 'POST', body: JSON.stringify(data) });
+  const updatePhase = async (id: string, data: any) => apiFetch(`/academy/phases/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  const togglePhase = async (id: string) => apiFetch(`/academy/phases/${id}/toggle`, { method: 'PATCH' });
+  const deletePhase = async (id: string) => apiFetch(`/academy/phases/${id}`, { method: 'DELETE' });
+
+  const listWeeks = async (phaseId?: string) => apiFetch(`/academy/weeks${phaseId ? `?phaseId=${phaseId}` : ''}`);
+  const getWeek = async (id: string) => apiFetch(`/academy/weeks/${id}`);
+  const createWeek = async (data: any) => apiFetch('/academy/weeks', { method: 'POST', body: JSON.stringify(data) });
+  const updateWeek = async (id: string, data: any) => apiFetch(`/academy/weeks/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  const toggleWeek = async (id: string) => apiFetch(`/academy/weeks/${id}/toggle`, { method: 'PATCH' });
+  const deleteWeek = async (id: string) => apiFetch(`/academy/weeks/${id}`, { method: 'DELETE' });
+
+  const listLessons = async (weekId?: string) => apiFetch(`/academy/lessons${weekId ? `?weekId=${weekId}` : ''}`);
+  const getLesson = async (id: string) => apiFetch(`/academy/lessons/${id}`);
+  const createLesson = async (data: any) => apiFetch('/academy/lessons', { method: 'POST', body: JSON.stringify(data) });
+  const updateLesson = async (id: string, data: any) => apiFetch(`/academy/lessons/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+  const toggleLesson = async (id: string) => apiFetch(`/academy/lessons/${id}/toggle`, { method: 'PATCH' });
+  const deleteLesson = async (id: string) => apiFetch(`/academy/lessons/${id}`, { method: 'DELETE' });
+
+  return {
+    academy: {
+      listPhases,
+      getPhase,
+      createPhase,
+      updatePhase,
+      togglePhase,
+      deletePhase,
+      listWeeks,
+      getWeek,
+      createWeek,
+      updateWeek,
+      toggleWeek,
+      deleteWeek,
+      listLessons,
+      getLesson,
+      createLesson,
+      updateLesson,
+      toggleLesson,
+      deleteLesson,
+    }
+  } as const;
+};

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import connectDB from './config/database';
+import { connectAcademyDB } from './config/academyDatabase';
 import { validateAndLogConfiguration } from './utils/configValidator';
 import { logger } from './utils/logger';
 import userRoutes from './api/user.routes';
@@ -13,6 +14,9 @@ import notificationRoutes from './api/notification.routes';
 import dashboardRoutes from './api/dashboard.routes';
 import uploadRoutes from './api/upload.routes';
 import errorHandler from './middleware/error.middleware';
+import academyPhasesRoutes from './api/academy/phases.routes';
+import academyWeeksRoutes from './api/academy/weeks.routes';
+import academyLessonsRoutes from './api/academy/lessons.routes';
 
 // Import all models to ensure they are registered with Mongoose
 import './models/user.model';
@@ -34,6 +38,10 @@ const app = express();
 
 // Connect to database
 connectDB();
+// Connect to academy database (separate cluster/connection)
+connectAcademyDB().catch((err) => {
+    console.error('Failed to connect to Academy database', err);
+});
 
 app.use(cors());
 app.use(express.json());
@@ -47,6 +55,10 @@ app.use('/api', arenaChannelRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/upload', uploadRoutes);
+// Academy routes (separate DB)
+app.use('/api/academy/phases', academyPhasesRoutes);
+app.use('/api/academy/weeks', academyWeeksRoutes);
+app.use('/api/academy/lessons', academyLessonsRoutes);
 
 const PORT = process.env.PORT || 5001;
 

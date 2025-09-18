@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Flame, BookOpen, Database, MessageSquare, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, Flame, BookOpen, Database, MessageSquare, Bell, GraduationCap, Calendar, Layers } from 'lucide-react';
 
 // Custom sidebar toggle icon
 const SidebarCloseIcon = () => (
@@ -44,6 +44,9 @@ const navItems = [
   { to: "/admin/forge", label: "Forge", icon: <Flame strokeWidth={1.5} /> },
   { to: "/admin/crucible", label: "Crucible", icon: <BookOpen strokeWidth={1.5} /> },
   { to: "/admin/knowledge-base", label: "Knowledge Base", icon: <Database strokeWidth={1.5} /> },
+  { to: "/admin/academy/phases", label: "Phases", icon: <Layers strokeWidth={1.5} /> },
+  { to: "/admin/academy/weeks", label: "Weeks", icon: <Calendar strokeWidth={1.5} /> },
+  { to: "/admin/academy/lessons", label: "Lessons", icon: <GraduationCap strokeWidth={1.5} /> },
   { to: "/admin/notifications", label: "Notifications", icon: <Bell strokeWidth={1.5} /> },
 ];
 
